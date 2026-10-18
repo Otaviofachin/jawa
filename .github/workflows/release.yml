@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - name: Confere a tag com a versão do Cargo.toml
+        run: |
+          set -euo pipefail
+          crate_version="$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "jawa") | .version')"
+          if [ "v${crate_version}" != "$GITHUB_REF_NAME" ]; then
+            echo "A tag $GITHUB_REF_NAME não bate com a versão ${crate_version} do Cargo.toml." >&2
+            exit 1
+          fi
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # Os testes do CLI dependem de build debug (JAWA_SYSTEM_ROOT só existe com debug_assertions).
+      - run: cargo test --all-features
+      - run: cargo build --release --locked
+      - run: cargo install cargo-deb --locked --version 3.8.0
+      - run: cargo deb -p jawa --no-build
+      - name: Empacota artefatos
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dist "jawa-${version}-x86_64-linux"
+          cp target/release/jawa LICENSE README.md "jawa-${version}-x86_64-linux/"
+          tar -czf "dist/jawa-${version}-x86_64-linux.tar.gz" "jawa-${version}-x86_64-linux"
+          debs=(target/debian/jawa_*_amd64.deb)
+          if [ "${#debs[@]}" -ne 1 ] || [ ! -f "${debs[0]}" ]; then
+            echo "Esperava exatamente um .deb em target/debian." >&2
+            exit 1
+          fi
+          deb_name="$(basename "${debs[0]}")"
+          cp "${debs[0]}" dist/
+          cd dist
+          sha256sum "$deb_name" > "${deb_name}.sha256"
+          sha256sum "jawa-${version}-x86_64-linux.tar.gz" > "jawa-${version}-x86_64-linux.tar.gz.sha256"
+      - name: Cria o release em rascunho
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+            --title "Jawa $GITHUB_REF_NAME" --generate-notes dist/*
