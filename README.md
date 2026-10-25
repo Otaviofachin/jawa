@@ -2,7 +2,7 @@
 
 Limpeza de disco para quem programa no Linux, pelo terminal: encontra o que as ferramentas de desenvolvimento acumulam, explica cada item e só apaga depois de várias verificações de segurança.
 
-<!-- TODO: gif da TUI (vhs) -->
+![Interface do Jawa: cabeçalho com o disco, árvore de categorias com etiquetas de risco e painel de detalhes](docs/images/jawa-tui.png)
 
 O nome vem dos Jawas de *Star Wars*, os catadores que percorrem o deserto recolhendo sucata.
 
@@ -41,21 +41,7 @@ Com ela instalada, `jawa` abre a interface nova; sem ela, abre a interface embut
 
 ## Como usar
 
-Rode `jawa`. A interface abre no terminal e mede tudo o que dá para limpar (só lendo, nunca apagando):
-
-```
-╭─ 🪐 Jawa ────────────────────────────────────────────────────────────╮
-│ ██████████████████████████████████████████░░░░░░░░░░░    80% usado   │
-╰─────────────────────────────────────────── 49,9 GB livres de 249,8 GB ─╯
-╭─ O que dá para limpar ───────────────────────────────╮╭─ Detalhes ─────────╮
-│ ▼ 📦 Cache do npm        2,4 GB ██▌      ● Seguro     ││ 📦 Cache do npm    │
-│   ├── ☑ _cacache         2,3 GB                       ││                    │
-│   └── ☑ _npx           120,0 MB                       ││ Cópia de cada      │
-│ ▶ 💤 Projetos parados   19,7 GB ████████ ● Revisar    ││ pacote baixado     │
-│ ▶ 💻 Sistema (guiado)    4,7 GB ██▌      🔒 Só com sudo││ pelo npm.          │
-╰──────────────────────────────────────────────────────╯╰────────────────────╯
-☑ 49 itens · 52,7 GB                 Limpar marcados   Medir de novo   Ajuda
-```
+Rode `jawa`. A interface abre no terminal e mede tudo o que dá para limpar (só lendo, nunca apagando). À esquerda ficam as categorias, que abrem nos itens; à direita, os detalhes do que está sob o cursor.
 
 | Tecla | O que faz |
 |---|---|

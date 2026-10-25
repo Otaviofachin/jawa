@@ -1,7 +1,7 @@
 from rich.text import Text
 from textual.widgets import Static
 
-from jawa_tui.format import category_icon, human_bytes, tag_label
+from jawa_tui.format import category_icon, count_items, human_bytes, tag_label
 from jawa_tui.models import Category, Item, Reversibility, Risk, Tag
 from jawa_tui.widgets.labels import TAG_STYLES
 
@@ -32,7 +32,9 @@ class Details(Static):
         text.append(tag_label(category.tag), style=TAG_STYLES[category.tag])
         text.append(f"\n{category.explanation.recommendation}\n")
         if category.items:
-            text.append(f"\n{len(category.items)} item(ns) · {human_bytes(category.total_bytes)}\n")
+            text.append(
+                f"\n{count_items(len(category.items))} · {human_bytes(category.total_bytes)}\n"
+            )
         if category.footnote:
             text.append(f"\n{category.footnote}\n", style="grey62")
         if category.problem:

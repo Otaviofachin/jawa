@@ -1,3 +1,5 @@
+import math
+
 from jawa_tui.models import Tag
 
 UNITS = ("B", "kB", "MB", "GB", "TB")
@@ -63,7 +65,7 @@ def _rounded_tenths(size: int, unit: int) -> int:
 def size_bar(size: int, largest: int, width: int = 8) -> str:
     if size <= 0 or largest <= 0:
         return ""
-    eighths = max(1, size * width * 8 // largest)
+    eighths = max(1, round(math.sqrt(size / largest) * width * 8))
     full, rest = divmod(min(eighths, width * 8), 8)
     return FULL_BLOCK * full + (BAR_EIGHTHS[rest] if rest else "")
 
@@ -84,3 +86,7 @@ def used_percent(free: int, total: int) -> int:
 
 def short_title(category_id: str, title: str) -> str:
     return SHORT_TITLES.get(category_id, title)
+
+
+def count_items(count: int) -> str:
+    return f"{count} item" if count == 1 else f"{count} itens"

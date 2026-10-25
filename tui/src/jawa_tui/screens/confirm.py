@@ -6,7 +6,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Static
 
-from jawa_tui.format import human_bytes
+from jawa_tui.format import count_items, human_bytes
 from jawa_tui.models import Item, Plan
 
 CONFIRM_WORD = "apagar"
@@ -31,7 +31,7 @@ class ConfirmScreen(ModalScreen[bool]):
 
     def compose(self) -> ComposeResult:
         total = sum(item.bytes for item in self.items)
-        notes = [f"Total estimado: {human_bytes(total)} em {len(self.items)} itens"]
+        notes = [f"Total estimado: {human_bytes(total)} em {count_items(len(self.items))}"]
         notes += [f"Aviso: {warning}" for warning in self.plan.warnings]
         if self.typed:
             notes.append(f"Tem item irreversível: digite {CONFIRM_WORD} para liberar a limpeza.")

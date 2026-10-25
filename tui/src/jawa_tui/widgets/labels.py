@@ -34,12 +34,13 @@ def fit(text: str, width: int) -> str:
 
 def category_label(category: Category, largest: int) -> Text:
     name = short_title(category.id, category.title)
-    title = fit(f"{category_icon(category.id)} {name}", TITLE_WIDTH)
+    pad = "" if category.items else NO_ARROW_PAD
+    title = pad + fit(f"{category_icon(category.id)} {name}", TITLE_WIDTH)
     size = (
         human_bytes(category.total_bytes).rjust(SIZE_WIDTH) if category.items else " " * SIZE_WIDTH
     )
     bar = fit(size_bar(category.total_bytes, largest, BAR_WIDTH), BAR_WIDTH)
-    label = Text(title if category.items else NO_ARROW_PAD + title[: -len(NO_ARROW_PAD)])
+    label = Text(title)
     label.append(f" {size} ")
     label.append(bar, style="bright_blue")
     label.append(" ")

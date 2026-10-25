@@ -1,4 +1,11 @@
-from jawa_tui.format import category_icon, human_bytes, size_bar, tag_label, used_percent
+from jawa_tui.format import (
+    category_icon,
+    count_items,
+    human_bytes,
+    size_bar,
+    tag_label,
+    used_percent,
+)
 
 
 def test_human_bytes_matches_rust_output() -> None:
@@ -10,12 +17,21 @@ def test_human_bytes_matches_rust_output() -> None:
     assert human_bytes(49_900_000_000) == "49,9 GB"
 
 
-def test_size_bar_is_proportional_to_largest() -> None:
-    assert size_bar(0, 100, width=8) == ""
-    assert size_bar(100, 100, width=8) == "█" * 8
-    assert size_bar(50, 100, width=8) == "████"
-    assert size_bar(1, 100, width=8) == "▏"
+def test_size_bar_uses_square_root_scale() -> None:
+    largest = 63_700_000_000
+    assert size_bar(0, largest, width=8) == ""
+    assert size_bar(largest, largest, width=8) == "█" * 8
+    assert size_bar(1_900_000_000, largest, width=8) == "█▍"
+    assert size_bar(6_200_000_000, largest, width=8) == "██▌"
+    assert size_bar(10_500_000_000, largest, width=8) == "███▎"
+    assert size_bar(1, largest, width=8) == "▏"
     assert size_bar(5, 0, width=8) == ""
+
+
+def test_count_items_uses_singular_and_plural() -> None:
+    assert count_items(0) == "0 itens"
+    assert count_items(1) == "1 item"
+    assert count_items(2) == "2 itens"
 
 
 def test_tag_label_texts() -> None:
