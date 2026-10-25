@@ -102,6 +102,7 @@ async def test_details_panel_follows_cursor() -> None:
         details = app.query_one(Details).plain
         assert "Resumo de node-modules-parados." in details
         assert "11 projetos com atividade" in details
+        assert "1 item · 3,6 GB" in details
         await goto(pilot, tree, tree.node_for_item(CRASH.id))
         await pilot.pause()
         details = app.query_one(Details).plain
@@ -156,6 +157,9 @@ async def test_action_bar_counter_follows_marks() -> None:
         await goto(pilot, tree, tree.node_for_item(NPM_FIRST.id))
         await pilot.press("space")
         assert bar.plain.startswith("☑ 2 itens · 470,0 MB"), bar.plain
+        await goto(pilot, tree, tree.node_for_item(NPM_SECOND.id))
+        await pilot.press("space")
+        assert bar.plain.startswith("☑ 1 item · 350,0 MB"), bar.plain
         assert not app.query_one("#clean", Button).disabled
 
 

@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Button, Label
 
-from jawa_tui.format import human_bytes
+from jawa_tui.format import count_items, human_bytes
 
 
 class ActionBar(Horizontal):
@@ -17,7 +17,7 @@ class ActionBar(Horizontal):
         yield Button("Ajuda", id="help", compact=True)
 
     def show_selection(self, count: int, size: int) -> None:
-        self.plain = f"☑ {count} itens · {human_bytes(size)}"
+        self.plain = f"☑ {count_items(count)} · {human_bytes(size)}"
         self.query_one("#counter", Label).update(self.plain)
         self.query_one("#clean", Button).disabled = count == 0
 
