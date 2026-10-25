@@ -5,5 +5,8 @@ fn prints_version() {
         .output()
         .unwrap();
     assert!(output.status.success());
-    assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "jawa 0.1.0");
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout).trim(),
+        concat!("jawa ", env!("CARGO_PKG_VERSION"))
+    );
 }

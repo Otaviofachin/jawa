@@ -13,14 +13,14 @@ Somente Linux x86_64.
 **Pacote `.deb`** (Debian, Ubuntu e derivados), baixado da página de [Releases](https://github.com/Otaviofachin/jawa/releases):
 
 ```bash
-sudo apt install ./jawa_0.1.0-1_amd64.deb
+sudo apt install ./jawa_0.2.0-1_amd64.deb
 ```
 
 **Binário `tar.gz`**, também nos Releases:
 
 ```bash
-tar -xzf jawa-0.1.0-x86_64-linux.tar.gz
-install -m 755 jawa-0.1.0-x86_64-linux/jawa ~/.local/bin/jawa
+tar -xzf jawa-0.2.0-x86_64-linux.tar.gz
+install -m 755 jawa-0.2.0-x86_64-linux/jawa ~/.local/bin/jawa
 ```
 
 Cada arquivo vem com um `.sha256` para conferir (`sha256sum -c`).
