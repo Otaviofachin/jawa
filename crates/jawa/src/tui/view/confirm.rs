@@ -1,5 +1,3 @@
-//! Confirmacao: lista rolavel, total fixo, avisos e o campo `apagar`.
-
 use jawa_core::model::finding::{Finding, Reversibility};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
@@ -18,7 +16,6 @@ pub(super) const REVERSIBILITY_ORDER: [Reversibility; 3] = [
     Reversibility::Irreversible,
 ];
 
-/// A lista rola; o total, os avisos e o campo `apagar` ficam fixos embaixo.
 pub(super) fn draw_confirm(frame: &mut Frame, area: Rect, model: &Model) {
     let notes = confirm_note_lines(model);
     let notes_height = wrapped_rows(&notes, area.width);
@@ -38,7 +35,6 @@ pub(super) fn draw_confirm(frame: &mut Frame, area: Rect, model: &Model) {
     frame.render_widget(field, input);
 }
 
-/// Itens agrupados por reversibilidade.
 pub(super) fn confirm_item_lines(model: &Model) -> Vec<Line<'static>> {
     let selected = model.selected_findings();
     let mut lines = Vec::new();

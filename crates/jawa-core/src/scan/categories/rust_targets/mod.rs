@@ -20,7 +20,6 @@ static DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::EXPLANATION,
 };
 
-/// `target/` ao lado de um `Cargo.toml`.
 pub struct RustTargets;
 
 impl Category for RustTargets {
@@ -58,7 +57,6 @@ impl Category for RustTargets {
     }
 }
 
-/// Repositorios das raizes mais as pastas ate 2 niveis abaixo da pessoal.
 fn project_dirs(ctx: &ScanContext) -> Vec<PathBuf> {
     let mut projects = all_repositories(ctx);
     for folder in home_folders(ctx.env) {
@@ -69,7 +67,6 @@ fn project_dirs(ctx: &ScanContext) -> Vec<PathBuf> {
     projects
 }
 
-/// Pastas `target` do projeto que tem manifesto ao lado e, dentro de repo, so as ignoradas.
 fn targets_of(git: &Git, ctx: &ScanContext, project: &Path) -> Result<Vec<PathBuf>, RunError> {
     let existing: Vec<PathBuf> = TARGET_LOCATIONS
         .iter()
@@ -86,7 +83,6 @@ fn targets_of(git: &Git, ctx: &ScanContext, project: &Path) -> Result<Vec<PathBu
         .collect())
 }
 
-/// Pasta de verdade; um symlink chamado `target` nao conta.
 fn is_real_dir(path: &Path) -> bool {
     std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_dir())
 }
@@ -97,7 +93,6 @@ fn has_manifest_beside(target: &Path) -> bool {
         .is_some_and(|parent| parent.join("Cargo.toml").is_file())
 }
 
-/// Sobe de `project` ate a pasta pessoal procurando um repositorio.
 fn enclosing_repository(project: &Path, home: &Path) -> Option<PathBuf> {
     project
         .ancestors()

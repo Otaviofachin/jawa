@@ -8,6 +8,7 @@ use jawa_core::model::finding::{Action, Finding, FindingId, Reversibility, Risk}
 use jawa_core::safety::ledger::{InstanceLock, Ledger};
 use jawa_core::scan::warnings::selection_warnings;
 
+use super::json::{plan_line, progress_line, result_line};
 use super::{CliError, CliResult, EXIT_PARTIAL};
 use crate::format::{
     SNAPSHOT_HINT, display_safe, human_bytes, reversibility_label, risk_label, space_lines,
@@ -19,21 +20,31 @@ const YES_ANSWERS: [&str; 2] = ["s", "sim"];
 #[derive(Args)]
 #[command(next_help_heading = super::OPTIONS_HEADING)]
 pub struct CleanArgs {
-    /// Ids dos itens da última medição.
-    #[arg(value_name = "IDS", help_heading = super::ARGUMENTS_HEADING)]
+    #[arg(value_name = "IDS", help_heading = super::ARGUMENTS_HEADING, help = "Ids dos itens da última medição")]
     ids: Vec<String>,
-    /// Soma todos os itens seguros e livres de bloqueio.
-    #[arg(long = "seguros")]
+    #[arg(
+        long = "seguros",
+        help = "Soma todos os itens seguros e livres de bloqueio"
+    )]
     safe: bool,
-    /// Mostra o plano e sai sem apagar nada.
-    #[arg(long = "simular")]
+    #[arg(long = "simular", help = "Mostra o plano e sai sem apagar nada")]
     simulate: bool,
-    /// Confirma sem perguntar (obrigatório fora de um terminal).
-    #[arg(long = "sim")]
+    #[arg(
+        long = "sim",
+        help = "Confirma sem perguntar (obrigatório fora de um terminal)"
+    )]
     yes: bool,
-    /// Permite apagar itens irreversíveis.
-    #[arg(long = "confirmar-irreversivel")]
+    #[arg(
+        long = "confirmar-irreversivel",
+        help = "Permite apagar itens irreversíveis"
+    )]
     allow_irreversible: bool,
+    #[arg(
+        long = "json",
+        hide = true,
+        help = "Progresso e resultado em JSON Lines (usado pela interface jawa-tui)"
+    )]
+    json: bool,
 }
 
 pub fn run(session: &Session, args: &CleanArgs) -> CliResult {
@@ -41,6 +52,9 @@ pub fn run(session: &Session, args: &CleanArgs) -> CliResult {
     let requested = parse_ids(&args.ids)?;
     let mut ledger = Ledger::load_fresh(&session.env)?;
     let selected = select_findings(&ledger, requested, args.safe)?;
+    if args.json {
+        return run_json(session, &mut ledger, &selected, args);
+    }
     if selected.is_empty() {
         println!("Nada a limpar: nenhum item seguro disponível na última medição.");
         return Ok(ExitCode::SUCCESS);
@@ -55,12 +69,44 @@ pub fn run(session: &Session, args: &CleanArgs) -> CliResult {
         println!("Cancelado: nada foi alterado.");
         return Ok(ExitCode::SUCCESS);
     }
-    let request = CleanRequest {
-        ids: selected.iter().map(|finding| finding.id.clone()).collect(),
-        allow_irreversible: args.allow_irreversible,
-    };
+    let request = request_for(&selected, args.allow_irreversible);
     let report = execute(session, &mut ledger, &request)?;
     Ok(print_report(&report))
+}
+
+fn request_for(selected: &[Finding], allow_irreversible: bool) -> CleanRequest {
+    CleanRequest {
+        ids: selected.iter().map(|finding| finding.id.clone()).collect(),
+        allow_irreversible,
+    }
+}
+
+fn run_json(
+    session: &Session,
+    ledger: &mut Ledger,
+    selected: &[Finding],
+    args: &CleanArgs,
+) -> CliResult {
+    if args.simulate {
+        println!("{}", plan_line(selected, &plan_warnings(selected)));
+        return Ok(ExitCode::SUCCESS);
+    }
+    if !args.yes {
+        return Err(CliError::Message(
+            "--json exige --sim: nesse modo não há como perguntar".to_string(),
+        ));
+    }
+    ensure_irreversible_allowed(selected, args.allow_irreversible)?;
+    let request = request_for(selected, args.allow_irreversible);
+    let cancel = AtomicBool::new(false);
+    let report = session.clean(ledger, &request, &print_progress_json, &cancel)?;
+    println!("{}", result_line(&report));
+    Ok(exit_code_for(&report))
+}
+
+fn print_progress_json(progress: &Progress) {
+    println!("{}", progress_line(progress));
+    let _ = io::stdout().flush();
 }
 
 fn parse_ids(texts: &[String]) -> Result<Vec<FindingId>, CliError> {
@@ -70,8 +116,6 @@ fn parse_ids(texts: &[String]) -> Result<Vec<FindingId>, CliError> {
         .collect()
 }
 
-/// Ids pedidos mais (com `--seguros`) todo item seguro e sem bloqueio. Um id
-/// fora da medição aborta antes de qualquer ação (S2).
 fn select_findings(
     ledger: &Ledger,
     requested: Vec<FindingId>,
@@ -127,18 +171,19 @@ fn print_plan(selected: &[Finding]) {
     }
     let total: u64 = selected.iter().map(|finding| finding.bytes).sum();
     println!("Total estimado: {}", human_bytes(total));
-    let refs: Vec<&Finding> = selected
-        .iter()
-        .filter(|finding| finding.blocked.is_none())
-        .collect();
-    for warning in selection_warnings(&refs) {
+    for warning in plan_warnings(selected) {
         println!("Aviso: {warning}");
     }
 }
 
-/// Item irreversível sem `--confirmar-irreversivel` recusa tudo antes de
-/// perguntar (S11): a confirmação não pode levar a um plano que vai pular.
-/// Itens guiados nunca rodam e não contam.
+fn plan_warnings(selected: &[Finding]) -> Vec<&'static str> {
+    let refs: Vec<&Finding> = selected
+        .iter()
+        .filter(|finding| finding.blocked.is_none())
+        .collect();
+    selection_warnings(&refs)
+}
+
 fn ensure_irreversible_allowed(selected: &[Finding], allowed: bool) -> Result<(), CliError> {
     let irreversible = selected.iter().any(|finding| {
         finding.reversibility == Reversibility::Irreversible
@@ -154,7 +199,6 @@ fn ensure_irreversible_allowed(selected: &[Finding], allowed: bool) -> Result<()
     Ok(())
 }
 
-/// Com `--sim` não pergunta; sem terminal e sem `--sim`, recusa.
 fn confirmed(yes: bool) -> Result<bool, CliError> {
     if yes {
         return Ok(true);

@@ -1,5 +1,3 @@
-//! Progresso da limpeza.
-
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style};

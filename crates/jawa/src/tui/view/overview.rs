@@ -1,5 +1,3 @@
-//! Tela inicial: barra de disco e uma linha por categoria.
-
 use jawa_core::model::finding::{CategoryId, Finding, Risk};
 use jawa_core::scan::CategoryScan;
 use jawa_core::scan::categories::{category, registry};
@@ -50,7 +48,6 @@ pub(super) fn overview_row(model: &Model, id: CategoryId) -> ListItem<'static> {
     ListItem::new(format!("{title:<TITLE_WIDTH$} {detail}")).style(style)
 }
 
-/// Total da categoria e quanto esta marcado, na cor do risco mais cauteloso.
 pub(super) fn scanned_detail(model: &Model, scan: &CategoryScan) -> (String, Style) {
     if let Err(problem) = &scan.result {
         return (problem.to_string(), Style::new().dark_gray());

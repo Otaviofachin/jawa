@@ -1,5 +1,3 @@
-//! Medicao: contexto, medicao de caminhos, categorias, descoberta de projetos e avisos cruzados.
-
 pub mod categories;
 pub mod paths;
 pub mod projects;
@@ -15,14 +13,10 @@ use crate::system::env::Environment;
 use crate::system::runner::CommandRunner;
 use categories::{ScanOutput, ScanProblem, registry};
 
-/// Item com caminho abaixo disso nao e oferecido.
 pub const MIN_ITEM_BYTES: u64 = 1_048_576;
-/// Tempo maximo de um comando de leitura (medicao).
 pub const READ_TIMEOUT: Duration = Duration::from_secs(30);
-/// Tempo maximo de um comando de limpeza.
 pub const ACTION_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 
-/// Caminhos do sistema, trocados por pastas temporarias nos testes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SystemPaths {
     pub docker_desktop_install: PathBuf,
@@ -32,7 +26,6 @@ pub struct SystemPaths {
 }
 
 impl SystemPaths {
-    /// Os mesmos caminhos, debaixo de `root` (a raiz `/` da maquina real).
     pub fn under(root: &Path) -> SystemPaths {
         SystemPaths {
             docker_desktop_install: root.join("opt/docker-desktop"),
@@ -56,11 +49,9 @@ pub struct ScanContext<'a> {
     pub runner: &'a dyn CommandRunner,
     pub read_timeout: Duration,
     pub system: SystemPaths,
-    /// Variaveis extras para o git; vazio em producao.
     pub git_env: Vec<(String, String)>,
 }
 
-/// Junta o rodape da medicao dos caminhos com os avisos da propria categoria.
 pub(crate) fn join_footnotes(parts: impl IntoIterator<Item = Option<String>>) -> Option<String> {
     let joined = parts.into_iter().flatten().collect::<Vec<_>>().join(" ");
     (!joined.is_empty()).then_some(joined)
@@ -72,7 +63,6 @@ pub struct CategoryScan {
     pub result: Result<ScanOutput, ScanProblem>,
 }
 
-/// Mede todas as categorias (ou so `only`) e monta o ledger com os itens.
 pub fn scan_all(
     ctx: &ScanContext,
     only: Option<CategoryId>,

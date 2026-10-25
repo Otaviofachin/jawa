@@ -31,9 +31,6 @@ pub fn config_file(env: &Environment) -> PathBuf {
 }
 
 impl Config {
-    /// Arquivo ausente vira a configuracao padrao. Um arquivo que existe mas
-    /// nao pode ser lido, tem TOML invalido ou chave desconhecida e um erro:
-    /// cair no padrao em silencio esconderia a raiz de projetos configurada.
     pub fn load(path: &Path) -> Result<Config, CoreError> {
         let invalid =
             |detail: String| CoreError::InvalidConfig(format!("{}: {detail}", path.display()));
@@ -47,7 +44,6 @@ impl Config {
         toml::from_str(&text).map_err(|error| invalid(error.message().to_string()))
     }
 
-    /// Grava em arquivo temporario ao lado do destino e renomeia.
     pub fn save(&self, path: &Path) -> Result<(), CoreError> {
         let text = toml::to_string_pretty(self)
             .map_err(|error| CoreError::InvalidConfig(error.to_string()))?;

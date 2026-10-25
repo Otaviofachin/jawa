@@ -1,3 +1,2 @@
 [alias]
-# `cargo dev`: compila e abre a interface do Jawa.
 dev = "run --release -p jawa --"

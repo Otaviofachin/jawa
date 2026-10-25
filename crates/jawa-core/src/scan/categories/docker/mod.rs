@@ -1,6 +1,3 @@
-//! `docker-imagens` e `docker-volumes`. Medir so roda comandos de leitura (S1);
-//! cada volume solto vira um item proprio, removido por nome (S10).
-
 mod client;
 mod desktop;
 mod images;
@@ -18,7 +15,6 @@ pub use desktop::{DockerDesktopDisk, RECLAIM_COMMAND};
 pub use images::DockerImages;
 pub use volumes::DockerVolumes;
 
-/// Um item que roda `docker <args>` na limpeza.
 pub(super) struct CommandItem {
     pub(super) category: CategoryId,
     pub(super) args: Vec<String>,

@@ -1,5 +1,3 @@
-//! Itens de uma categoria, com marcacao e motivo de bloqueio.
-
 use jawa_core::model::finding::{CategoryId, Finding};
 use jawa_core::scan::CategoryScan;
 use jawa_core::scan::categories::category;
@@ -37,7 +35,6 @@ pub(super) fn draw_category(frame: &mut Frame, area: Rect, model: &Model, id: Ca
     }
 }
 
-/// Rodape da medicao ou o problema que impediu a categoria.
 pub(super) fn category_notice(scan: Option<&CategoryScan>) -> Option<String> {
     match &scan?.result {
         Ok(output) => output

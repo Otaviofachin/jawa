@@ -1,7 +1,3 @@
-//! Fachada publica do nucleo: abrir a sessao, medir, limpar e ler o historico
-//! com as pecas reais (runner, Lixeira, auditoria). Usada pela CLI, pela TUI e
-//! pela futura GUI.
-
 use std::sync::atomic::AtomicBool;
 use std::time::SystemTime;
 
@@ -18,7 +14,6 @@ use crate::system::config::{Config, config_file};
 use crate::system::env::Environment;
 use crate::system::runner::{CommandRunner, SystemRunner};
 
-/// Ambiente e configuracao da execucao.
 #[derive(Debug, Clone)]
 pub struct Session {
     pub env: Environment,
@@ -37,8 +32,6 @@ impl Session {
         })
     }
 
-    /// A mesma sessao com o relogio de agora: a TUI fica aberta por muito
-    /// tempo, e a idade do ledger (S2) precisa do horario de cada operacao.
     pub fn at_now(&self) -> Session {
         let mut session = self.clone();
         session.env.now = SystemTime::now();
@@ -57,7 +50,6 @@ impl Session {
         }
     }
 
-    /// Mede todas as categorias (ou so `only`) com o runner real (S1: so leitura).
     pub fn measure(
         &self,
         only: Option<CategoryId>,
@@ -67,8 +59,6 @@ impl Session {
         scan_all(&self.scan_context(&runner), only, on_done)
     }
 
-    /// Limpa com o runner, a Lixeira e o historico reais. As raizes da fronteira
-    /// e os processos vigiados sao calculados agora, item a item.
     pub fn clean(
         &self,
         ledger: &mut Ledger,
@@ -95,15 +85,11 @@ impl Session {
         clean(ledger, request, &exec_context, on_progress, cancel)
     }
 
-    /// As ultimas `last` linhas do historico de limpezas (S12).
     pub fn history(&self, last: usize) -> Result<Vec<AuditEntry>, CoreError> {
         Ok(AuditLog::open(&self.env)?.recent(last))
     }
 }
 
-/// Em build de debug, os testes trocam a raiz do sistema por uma pasta
-/// temporaria. Em release a variavel e ignorada: ninguem pode fingir que o
-/// Docker Desktop nao esta instalado (S9).
 #[cfg(debug_assertions)]
 fn system_paths() -> SystemPaths {
     match std::env::var_os("JAWA_SYSTEM_ROOT") {

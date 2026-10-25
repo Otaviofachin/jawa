@@ -1,5 +1,3 @@
-//! Medicao de um caminho: tamanho, impressao digital e bloqueios (S3, S6-S8).
-
 use std::path::Path;
 
 use super::categories::{Category, ScanOutput, ScanProblem};
@@ -21,10 +19,6 @@ pub struct PathItem<'a> {
     pub trash: bool,
 }
 
-/// Mede o caminho e monta o `Finding`; `Ok(None)` se nao existe ou e pequeno
-/// demais. Um erro de leitura (por exemplo, permissao negada) vira
-/// `ScanProblem::NoAccess` com o caminho. `watched` sao os processos que
-/// bloqueiam este item (S6).
 pub fn path_finding(
     ctx: &ScanContext,
     watched: &[&str],
@@ -61,8 +55,6 @@ pub fn path_finding(
     }))
 }
 
-/// Mede cada item. Se nenhum caminho pode ser lido, devolve `NoAccess` do
-/// primeiro; se so parte falhou, conta as falhas no rodape.
 pub fn collect_findings<'a>(
     ctx: &ScanContext,
     category: &'a dyn Category,
@@ -72,8 +64,6 @@ pub fn collect_findings<'a>(
     collect_findings_watched(ctx, items.into_iter().map(|item| (watched, item)))
 }
 
-/// Como `collect_findings`, mas cada item traz os processos que o bloqueiam
-/// (os caches de apps vigiam um app por item).
 pub(crate) fn collect_findings_watched<'a>(
     ctx: &ScanContext,
     items: impl IntoIterator<Item = (&'a [&'a str], PathItem<'a>)>,
@@ -104,7 +94,6 @@ pub(crate) fn collect_findings_watched<'a>(
     }
 }
 
-/// Trocar a pasta pessoal por `~` deixa a tabela curta e sem o nome da pessoa.
 pub(crate) fn display_location(path: &Path, home: &Path) -> String {
     match path.strip_prefix(home) {
         Ok(relative) => format!("~/{}", relative.display()),

@@ -1,5 +1,3 @@
-//! Descoberta de repositorios e de pastas conhecidas dentro deles (S5, S16).
-
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -9,23 +7,17 @@ use crate::system::config::Config;
 use crate::system::env::Environment;
 use crate::system::git::Git;
 
-/// Ate quantos niveis abaixo de um repositorio se procura outro aninhado
-/// (a mesma profundidade da busca por pastas conhecidas).
 const NESTED_REPOSITORY_DEPTH: usize = 3;
 
 const MIN_REPOSITORIES_PER_ROOT: usize = 2;
 const AUTODETECT_DEPTH: usize = 2;
 const SKIPPED_HOME_DIRS: [&str; 1] = ["snap"];
-/// Pastas de dependencias baixadas: um `dist` ou `build` la dentro faz parte
-/// do pacote, nao e saida de build do projeto.
 const DEPENDENCY_DIRS: [&str; 5] = ["node_modules", "bower_components", "vendor", "venv", "Pods"];
 
-/// `.git` existe, como pasta ou como arquivo (worktree e submodulo).
 pub fn is_repository(dir: &Path) -> bool {
     dir.join(".git").exists()
 }
 
-/// A propria raiz, se for repositorio; senao os filhos diretos que sao, em ordem.
 pub fn repositories_in(root: &Path) -> Vec<PathBuf> {
     if is_repository(root) {
         return vec![root.to_path_buf()];
@@ -36,9 +28,6 @@ pub fn repositories_in(root: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
-/// `repo` e os repositorios aninhados nele (clones e submodulos) ate
-/// `max_depth` niveis abaixo de cada um, em ordem. Cada aninhado e varrido
-/// como repositorio proprio, com o `.gitignore` e a atividade dele (S5, S16).
 pub fn with_nested_repositories(repo: &Path, max_depth: usize) -> Vec<PathBuf> {
     let mut all = vec![repo.to_path_buf()];
     for nested in nested_repositories(repo, max_depth) {
@@ -47,7 +36,6 @@ pub fn with_nested_repositories(repo: &Path, max_depth: usize) -> Vec<PathBuf> {
     all
 }
 
-/// Repositorios dentro de `repo`, sem descer neles nem em pastas muradas.
 fn nested_repositories(repo: &Path, max_depth: usize) -> Vec<PathBuf> {
     let mut found = Vec::new();
     let mut level = vec![repo.to_path_buf()];
@@ -69,10 +57,6 @@ fn nested_repositories(repo: &Path, max_depth: usize) -> Vec<PathBuf> {
     found
 }
 
-/// Busca em largura por pastas de `names` (que podem ter barra, como
-/// `.angular/cache`) ate `max_depth` niveis abaixo de `repo`. Nao desce em
-/// pastas de dependencias (`node_modules`, `bower_components`...), `.git`, pastas ocultas, symlinks, pasta ja encontrada nem
-/// em repositorio aninhado (que e varrido como repositorio proprio).
 pub fn find_named_dirs(repo: &Path, names: &[&str], max_depth: usize) -> Vec<PathBuf> {
     let mut found = Vec::new();
     let mut level = vec![repo.to_path_buf()];
@@ -119,7 +103,6 @@ fn is_walled_by_name(dir: &Path) -> bool {
         .is_none_or(|name| name.starts_with('.') || DEPENDENCY_DIRS.contains(&name))
 }
 
-/// Subpastas diretas (sem seguir symlink), em ordem.
 fn child_dirs(dir: &Path) -> Vec<PathBuf> {
     let Ok(entries) = fs::read_dir(dir) else {
         return Vec::new();
@@ -137,8 +120,6 @@ fn is_real_dir(path: &Path) -> bool {
     fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_dir())
 }
 
-/// Pastas ate 2 niveis abaixo da pessoal, sem ocultas, `snap` nem downloads.
-/// Pastas que sao repositorios entram, mas nao se desce nelas.
 pub fn home_folders(env: &Environment) -> Vec<PathBuf> {
     let mut folders = Vec::new();
     let mut level = vec![env.home.clone()];
@@ -172,8 +153,6 @@ fn is_skipped_home_dir(dir: &Path, env: &Environment) -> bool {
         || env.downloads_dir.as_deref() == Some(dir)
 }
 
-/// Raizes de projetos sem configuracao: pastas com pelo menos 2 repositorios
-/// como filhos diretos.
 pub fn autodetect_roots(env: &Environment) -> Vec<PathBuf> {
     let mut roots: Vec<PathBuf> = Vec::new();
     for folder in home_folders(env) {
@@ -193,7 +172,6 @@ fn has_enough_repositories(folder: &Path) -> bool {
         >= MIN_REPOSITORIES_PER_ROOT
 }
 
-/// As raizes configuradas, ou as detectadas quando a lista esta vazia.
 pub fn effective_roots(config: &Config, env: &Environment) -> Vec<PathBuf> {
     if config.project_roots.is_empty() {
         autodetect_roots(env)
@@ -202,7 +180,6 @@ pub fn effective_roots(config: &Config, env: &Environment) -> Vec<PathBuf> {
     }
 }
 
-/// O `git` da varredura, ou `ToolMissing` quando nao foi encontrado no `PATH`.
 pub(crate) fn git_for<'a>(ctx: &'a ScanContext) -> Result<Git<'a>, ScanProblem> {
     let exe = ctx
         .env
@@ -220,8 +197,6 @@ pub(crate) fn require_roots(ctx: &ScanContext) -> Result<(), ScanProblem> {
     Ok(())
 }
 
-/// Repositorios de todas as raizes de projetos, com os aninhados (clones e
-/// submodulos) como repositorios proprios, sem repetir.
 pub(crate) fn all_repositories(ctx: &ScanContext) -> Vec<PathBuf> {
     let mut repositories: Vec<PathBuf> = Vec::new();
     for repo in ctx
@@ -237,8 +212,6 @@ pub(crate) fn all_repositories(ctx: &ScanContext) -> Vec<PathBuf> {
     repositories
 }
 
-/// `repo` ou `repo (subpasta)`, onde a subpasta e a pasta `container` do item,
-/// relativa ao repositorio.
 pub(crate) fn repo_label(repo: &Path, container: &Path) -> String {
     let repo_name = repo
         .file_name()

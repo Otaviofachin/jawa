@@ -1,6 +1,3 @@
-//! Threads de medicao e limpeza. Falam com a interface so por mensagens, e a
-//! interface nunca espera por elas.
-
 use std::io;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -14,12 +11,9 @@ use jawa_core::scan::CategoryScan;
 use super::model::Msg;
 use jawa_core::api::Session;
 
-/// Prefixo do nome das threads de trabalho (o gancho de panico o usa).
 pub const WORKER_THREAD_PREFIX: &str = "jawa-worker";
 const UNEXPECTED_END: &str = "a tarefa em segundo plano parou de forma inesperada; veja o jawa.log";
 
-/// Mede tudo em segundo plano, manda cada categoria assim que ela termina e
-/// grava o ledger no fim (S1: so leitura).
 pub fn spawn_scan(session: Arc<Session>, tx: Sender<Msg>) -> io::Result<JoinHandle<()>> {
     thread::Builder::new()
         .name(format!("{WORKER_THREAD_PREFIX}-medicao"))
@@ -39,8 +33,6 @@ pub fn spawn_scan(session: Arc<Session>, tx: Sender<Msg>) -> io::Result<JoinHand
         })
 }
 
-/// Limpa em segundo plano com todas as travas do executor. `cancel` pula os
-/// itens que ainda nao comecaram.
 pub fn spawn_clean(
     ledger: Ledger,
     request: CleanRequest,
@@ -64,7 +56,6 @@ pub fn spawn_clean(
         })
 }
 
-/// Com a interface fechada, o canal some e a mensagem nao tem para onde ir.
 fn send(tx: &Sender<Msg>, msg: Msg) {
     if tx.send(msg).is_err() {
         tracing::debug!("interface fechada; mensagem do worker descartada");
@@ -77,8 +68,6 @@ enum WorkerKind {
     Clean,
 }
 
-/// Avisa a interface se a thread terminar sem a mensagem final (panico), para
-/// ela nao ficar presa em "medindo" ou "limpando".
 struct EndNotice {
     tx: Sender<Msg>,
     kind: WorkerKind,

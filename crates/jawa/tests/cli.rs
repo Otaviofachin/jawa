@@ -58,10 +58,11 @@ impl Sandbox {
         let output = self.run(&["medir", "--json"]);
         assert!(output.status.success(), "{}", stderr(&output));
         let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-        report["itens"]
+        report["categories"]
             .as_array()
             .unwrap()
             .iter()
+            .flat_map(|category| category["items"].as_array().unwrap().iter())
             .map(|item| item["id"].as_str().unwrap().to_string())
             .collect()
     }
@@ -103,10 +104,54 @@ fn measure_lists_npm_cache_and_saves_ledger() {
 }
 
 #[test]
-fn measure_json_lists_items_and_problems() {
+fn measure_json_ids_match_seeded_items() {
     let sandbox = Sandbox::new();
     sandbox.seed_npm_cache();
     assert_eq!(sandbox.measured_ids().len(), 1);
+}
+
+fn category<'a>(report: &'a serde_json::Value, id: &str) -> &'a serde_json::Value {
+    report["categories"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|category| category["id"] == id)
+        .unwrap()
+}
+
+#[test]
+fn measure_json_has_disk_categories_and_items() {
+    let sandbox = Sandbox::new();
+    sandbox.seed_npm_cache();
+    let output = sandbox.run(&["medir", "--json"]);
+    assert_eq!(code(&output), 0, "{}", stderr(&output));
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["version"], 1);
+    let free = report["disk"]["free"].as_u64().unwrap();
+    let total = report["disk"]["total"].as_u64().unwrap();
+    assert!(free > 0 && total >= free, "{report}");
+    assert_eq!(report["categories"].as_array().unwrap().len(), 12);
+    let npm = category(&report, "npm-cache");
+    assert_eq!(npm["title"], "Cache do npm");
+    assert!(
+        !npm["explanation"]["what_it_is"]
+            .as_str()
+            .unwrap()
+            .is_empty()
+    );
+    assert!(npm["problem"].is_null());
+    let item = &npm["items"][0];
+    assert_eq!(item["risk"], "safe");
+    assert_eq!(item["reversibility"], "regenerable");
+    assert_eq!(item["id"].as_str().unwrap().len(), 10);
+    assert!(
+        item["location"]
+            .as_str()
+            .unwrap()
+            .ends_with(".npm/_cacache")
+    );
+    assert!(item["block"].is_null() && item["command"].is_null());
+    assert!(category(&report, "docker-imagens")["problem"].is_string());
 }
 
 #[test]
@@ -283,6 +328,67 @@ fn clean_with_yes_deletes_and_records_history() {
     assert!(stdout(&listing).contains("feito"));
 }
 
+fn json_lines(output: &Output) -> Vec<serde_json::Value> {
+    stdout(output)
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap_or_else(|_| panic!("não é JSON: {line}")))
+        .collect()
+}
+
+#[test]
+fn clean_json_streams_progress_then_result() {
+    let sandbox = Sandbox::new();
+    let cache = sandbox.seed_npm_cache();
+    let ids = sandbox.measured_ids();
+    let output = sandbox.run(&["limpar", &ids[0], "--sim", "--json"]);
+    assert_eq!(code(&output), 0, "{}", stderr(&output));
+    let lines = json_lines(&output);
+    assert!(
+        lines.iter().any(|line| line["type"] == "progress"),
+        "{lines:?}"
+    );
+    let result = lines.last().unwrap();
+    assert_eq!(result["type"], "result");
+    assert_eq!(result["items"][0]["id"], ids[0].as_str());
+    assert_eq!(result["items"][0]["outcome"], "done");
+    assert!(result["estimated"].as_u64().unwrap() > 0);
+    assert_eq!(result["trash"], 0);
+    assert!(!cache.exists());
+}
+
+#[test]
+fn clean_simulate_json_returns_the_plan_without_acting() {
+    let sandbox = Sandbox::new();
+    let cache = sandbox.seed_npm_cache();
+    let ids = sandbox.measured_ids();
+    let output = sandbox.run(&["limpar", &ids[0], "--simular", "--json"]);
+    assert_eq!(code(&output), 0, "{}", stderr(&output));
+    let lines = json_lines(&output);
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    assert_eq!(lines[0]["type"], "plan");
+    assert_eq!(lines[0]["count"], 1);
+    assert!(lines[0]["estimated"].as_u64().unwrap() > 0);
+    assert!(lines[0]["warnings"].as_array().unwrap().is_empty());
+    assert!(cache.exists());
+}
+
+#[test]
+fn clean_json_without_measure_fails_on_stderr() {
+    let sandbox = Sandbox::new();
+    let output = sandbox.run(&["limpar", "a1b2c3d4e5", "--sim", "--json"]);
+    assert_eq!(code(&output), 1);
+    assert!(
+        !stdout(&output).contains("\"result\""),
+        "{}",
+        stdout(&output)
+    );
+    assert!(
+        stderr(&output).contains("jawa medir"),
+        "{}",
+        stderr(&output)
+    );
+}
+
 #[test]
 fn clean_refuses_non_tty_without_yes() {
     let sandbox = Sandbox::new();
@@ -317,7 +423,7 @@ fn save_irreversible_finding(sandbox: &Sandbox, target: &Path) -> String {
 }
 
 #[test]
-fn irreversible_needs_flag() {
+fn clean_irreversible_needs_flag() {
     let sandbox = Sandbox::new();
     let outside_roots = sandbox.home.join("dados");
     let id = save_irreversible_finding(&sandbox, &outside_roots);
@@ -334,7 +440,7 @@ fn irreversible_needs_flag() {
 }
 
 #[test]
-fn irreversible_runs_with_flag_inside_roots() {
+fn clean_irreversible_runs_with_flag_inside_roots() {
     let sandbox = Sandbox::new();
     let inside_roots = sandbox.home.join(".npm/dados");
     let id = save_irreversible_finding(&sandbox, &inside_roots);
@@ -347,7 +453,7 @@ fn irreversible_runs_with_flag_inside_roots() {
 }
 
 #[test]
-fn second_instance_is_refused() {
+fn clean_refuses_second_instance() {
     let sandbox = Sandbox::new();
     let env = sandbox.env();
     let _held = InstanceLock::acquire(&env).unwrap();
@@ -382,4 +488,30 @@ fn no_subcommand_while_busy_exits_1() {
     let output = sandbox.run(&[]);
     assert_eq!(code(&output), 1);
     assert!(stderr(&output).contains("outra execução do jawa está em andamento"));
+}
+
+#[test]
+fn no_subcommand_launches_jawa_tui_when_installed() {
+    use std::os::unix::fs::PermissionsExt;
+    let sandbox = Sandbox::new();
+    let bin = sandbox.home.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    let marker = sandbox.home.join("lancado");
+    let script = bin.join("jawa-tui");
+    fs::write(
+        &script,
+        format!(
+            "#!/bin/sh\nprintf '%s' \"$JAWA_BIN\" > '{}'\nexit 0\n",
+            marker.display()
+        ),
+    )
+    .unwrap();
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o755)).unwrap();
+    let output = sandbox.run(&[]);
+    assert_eq!(code(&output), 0, "{}", stderr(&output));
+    let launched_with = fs::read_to_string(&marker).unwrap();
+    assert_eq!(
+        fs::canonicalize(launched_with).unwrap(),
+        fs::canonicalize(env!("CARGO_BIN_EXE_jawa")).unwrap()
+    );
 }

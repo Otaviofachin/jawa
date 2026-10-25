@@ -5,7 +5,6 @@ use std::time::SystemTime;
 
 use crate::error::CoreError;
 
-/// Caminhos das ferramentas externas encontradas no `PATH`.
 #[derive(Debug, Clone, Default)]
 pub struct Tools {
     pub git: Option<PathBuf>,
@@ -27,7 +26,6 @@ impl Tools {
     }
 }
 
-/// Tudo o que o nucleo precisa saber sobre a maquina e a pessoa que a usa.
 #[derive(Debug, Clone)]
 pub struct Environment {
     pub home: PathBuf,
@@ -95,8 +93,6 @@ fn detect_with(
     })
 }
 
-/// A pasta pessoal e a fronteira de quase tudo: `/` ou a pasta de outro
-/// usuario (por exemplo, `HOME` herdado num `sudo -E`) recusam o inicio.
 fn check_home(home: &Path, euid: u32) -> Result<(), CoreError> {
     let canonical = home.canonicalize().map_err(|_| CoreError::MissingHome)?;
     if canonical == Path::new("/") {

@@ -1,5 +1,3 @@
-//! Contrato das categorias (trait, descritor, explicacao, problema) e registro.
-
 use std::path::PathBuf;
 
 use thiserror::Error;
@@ -20,7 +18,6 @@ mod tool_caches;
 
 pub use docker::RECLAIM_COMMAND;
 
-/// Os seis campos de `jawa explicar`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Explanation {
     pub what_it_is: &'static str,
@@ -39,7 +36,6 @@ pub struct Descriptor {
     pub explanation: Explanation,
 }
 
-/// Por que uma categoria nao mostra itens.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum ScanProblem {
     #[error("a ferramenta {0} não foi encontrada")]
@@ -71,19 +67,13 @@ impl From<Vec<Finding>> for ScanOutput {
 
 pub trait Category: Sync {
     fn descriptor(&self) -> &'static Descriptor;
-    /// Raizes da fronteira (S4) dos itens desta categoria.
     fn roots(&self, ctx: &ScanContext) -> Vec<PathBuf>;
-    /// Nomes de processo que bloqueiam a categoria (S6).
     fn watched_processes(&self) -> &'static [&'static str] {
         &[]
     }
-    /// Processos que bloqueiam um item na hora de limpar (S6). Uma categoria
-    /// que vigia apps diferentes por item responde so os do item.
     fn watched_processes_for(&self, _finding: &Finding) -> Vec<&'static str> {
         self.watched_processes().to_vec()
     }
-    /// Pasta onde um processo bloqueia o item na hora de limpar (S6); `None`
-    /// e o proprio alvo.
     fn in_use_scope(&self, _finding: &Finding) -> Option<PathBuf> {
         None
     }
@@ -105,13 +95,10 @@ static REGISTRY: [&dyn Category; 12] = [
     &system::System,
 ];
 
-/// Categorias na ordem da tabela da especificacao.
 pub fn registry() -> &'static [&'static dyn Category] {
     &REGISTRY
 }
 
-/// Categoria de um id. Enquanto as demais nao entram no registro, devolve uma
-/// categoria sem raizes: toda acao fica recusada pela fronteira (falha fechado).
 pub fn category(id: CategoryId) -> &'static dyn Category {
     registry()
         .iter()

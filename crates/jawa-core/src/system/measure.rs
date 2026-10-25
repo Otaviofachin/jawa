@@ -16,8 +16,6 @@ pub struct Measurement {
     pub crosses_mount: bool,
 }
 
-/// Mede o espaco realmente alocado (`st_blocks * 512`) sem seguir symlinks
-/// nem atravessar pontos de montagem.
 pub fn measure(path: &Path, owner_uid: u32) -> io::Result<Measurement> {
     let root_metadata = fs::symlink_metadata(path)?;
     if root_metadata.is_dir() {

@@ -1,6 +1,3 @@
-//! `downloads`: pacotes, itens grandes e itens esquecidos na pasta de
-//! downloads, enviados para a Lixeira.
-
 mod texts;
 
 use std::fs;
@@ -35,8 +32,6 @@ const NO_DOWNLOADS_NOTE: &str = "Não há pasta de downloads.";
 const HOME_AS_DOWNLOADS_NOTE: &str =
     "A pasta de downloads é a própria pasta pessoal; nada foi oferecido.";
 
-/// A nota do item, ou `None` quando ele nao deve ser oferecido. Ocultos e
-/// downloads em andamento nunca entram.
 pub fn classify(size: u64, age: Option<Duration>, name: &str) -> Option<String> {
     let lower = name.to_lowercase();
     let is_partial = PARTIAL_SUFFIXES
@@ -68,7 +63,6 @@ static DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::EXPLANATION,
 };
 
-/// Itens de primeiro nivel da pasta de downloads, para a Lixeira.
 pub struct Downloads;
 
 impl Category for Downloads {
@@ -142,14 +136,11 @@ fn note_only(note: &str) -> ScanOutput {
     }
 }
 
-/// Com o XDG sem pasta de downloads, ela pode apontar para a propria pasta
-/// pessoal; oferecer cada item dali seria oferecer a casa inteira.
 fn is_home(dir: &Path, home: &Path) -> bool {
     let canonical = |path: &Path| path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
     canonical(dir) == canonical(home)
 }
 
-/// Classifica um item de primeiro nivel pelo tamanho real e pela idade.
 fn candidate(ctx: &ScanContext, path: &Path) -> Candidate {
     let Some(name) = path
         .file_name()

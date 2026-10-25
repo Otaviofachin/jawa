@@ -1,5 +1,3 @@
-//! Os seis campos de explicacao de uma categoria.
-
 use jawa_core::model::finding::CategoryId;
 use jawa_core::scan::categories::category;
 use ratatui::Frame;

@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-/// Processo que impede a limpeza de um alvo (S6).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Holder {
     pub pid: u32,
@@ -16,8 +15,6 @@ impl std::fmt::Display for Holder {
     }
 }
 
-/// Processos com `cwd` ou executavel dentro de `target` (S6). O proprio
-/// processo e entradas sem permissao de leitura sao ignorados.
 pub fn holders_of(target: &Path, proc_root: &Path) -> Vec<Holder> {
     let target = resolve_parent(target);
     let own_pid = std::process::id();
@@ -32,7 +29,6 @@ pub fn holders_of(target: &Path, proc_root: &Path) -> Vec<Holder> {
         .collect()
 }
 
-/// Processos cujo nome (`comm`) esta em `names`.
 pub fn running_named(names: &[&str], proc_root: &Path) -> Vec<Holder> {
     if names.is_empty() {
         return Vec::new();
@@ -72,8 +68,6 @@ fn process_name(process_dir: &Path) -> Option<String> {
     Some(comm.trim_end_matches('\n').to_string())
 }
 
-/// O kernel mostra caminhos canonicos em `/proc`, entao o pai do alvo e
-/// canonicalizado. O proprio alvo nao e seguido: um symlink conta como link.
 fn resolve_parent(target: &Path) -> PathBuf {
     match (target.parent(), target.file_name()) {
         (Some(parent), Some(name)) => parent
@@ -83,8 +77,6 @@ fn resolve_parent(target: &Path) -> PathBuf {
     }
 }
 
-/// Quem bloqueia um item, agrupado por nome: `node (PID 7)` para um processo
-/// e `chrome (12 processos)` para varios, para a linha caber na tela.
 pub fn describe_holders(holders: &[Holder]) -> String {
     let mut groups: Vec<(&str, Vec<u32>)> = Vec::new();
     for holder in holders {

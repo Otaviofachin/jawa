@@ -1,5 +1,3 @@
-//! Limpeza: resolve os ids, passa cada item pelas travas, executa e audita.
-
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
@@ -24,12 +22,10 @@ pub(crate) use precheck::chown_fix;
 use precheck::precheck;
 pub use report::{CleanReport, ItemOutcome, Progress, SkipReason};
 
-/// Destino dos itens da categoria `downloads`: a Lixeira.
 pub trait Discard: Sync {
     fn discard(&self, path: &Path) -> io::Result<()>;
 }
 
-/// Lixeira do freedesktop, via crate `trash`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SystemTrash;
 
@@ -52,12 +48,9 @@ pub struct ExecContext<'a> {
     pub audit: &'a AuditLog,
     pub roots_for: &'a dyn Fn(&Finding) -> Vec<PathBuf>,
     pub watched_names_for: &'a dyn Fn(&Finding) -> Vec<&'static str>,
-    /// Pasta vigiada por processos (S6); `None` e o proprio alvo.
     pub in_use_scope_for: &'a dyn Fn(&Finding) -> Option<PathBuf>,
 }
 
-/// Limpa os itens pedidos (S2-S8, S11, S12). Resolve todos os ids antes de
-/// agir; cada item passa pelas travas de novo e vai para o historico.
 pub fn clean(
     ledger: &mut Ledger,
     request: &CleanRequest,
@@ -93,7 +86,6 @@ pub fn clean(
     Ok(finish(ledger, items, warnings, free_before, ctx))
 }
 
-/// Qualquer id fora do ledger aborta tudo (S2). A ordem segue a do ledger.
 fn resolve_all(ledger: &Ledger, ids: &[FindingId]) -> Result<Vec<Finding>, CoreError> {
     if let Some(unknown) = ids.iter().find(|id| ledger.find(id).is_none()) {
         return Err(CoreError::UnknownId(unknown.clone()));
@@ -106,9 +98,6 @@ fn resolve_all(ledger: &Ledger, ids: &[FindingId]) -> Result<Vec<Finding>, CoreE
         .collect())
 }
 
-/// Devolve um aviso em PT-BR quando a linha do historico nao pode ser gravada.
-/// O horario de cada linha e o fim do item: o relogio do ambiente mais o tempo
-/// desde o inicio da limpeza (testavel e sem pular para tras).
 fn record_audit(
     ctx: &ExecContext,
     started: Instant,
@@ -134,8 +123,6 @@ fn record_audit(
     ))
 }
 
-/// Esquece os itens feitos, com falha ou que mudaram, e grava o ledger. Uma
-/// falha ao gravar vira aviso: o relatorio do que ja foi feito vale mais.
 fn finish(
     ledger: &mut Ledger,
     items: Vec<(Finding, ItemOutcome)>,

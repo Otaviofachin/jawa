@@ -1,5 +1,3 @@
-//! Desenho de cada tela a partir do `Model`. So le o estado.
-
 use jawa_core::model::finding::Risk;
 use jawa_core::scan::categories::{category, registry};
 use ratatui::Frame;
@@ -115,12 +113,10 @@ fn highlighted_list<'a>(items: Vec<ListItem<'a>>, title: &'a str) -> List<'a> {
         .highlight_symbol("> ")
 }
 
-/// Texto com quebra de linha e a rolagem do modelo.
 pub(super) fn draw_text(frame: &mut Frame, area: Rect, model: &Model, lines: Vec<Line<'static>>) {
     draw_scrolled(frame, area, model.scroll, lines, Block::bordered());
 }
 
-/// Paragrafo com borda que rola ate a ultima pagina, sem passar do fim.
 pub(super) fn draw_scrolled(
     frame: &mut Frame,
     area: Rect,
@@ -138,7 +134,6 @@ pub(super) fn draw_scrolled(
     frame.render_widget(paragraph, area);
 }
 
-/// Linhas na tela depois da quebra (estimativa por largura, sem hifenizar).
 fn wrapped_rows(lines: &[Line], width: u16) -> u16 {
     let width = usize::from(width.max(1));
     let rows: usize = lines

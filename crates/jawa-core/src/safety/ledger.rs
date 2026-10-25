@@ -15,7 +15,6 @@ use crate::system::env::Environment;
 pub const LEDGER_FORMAT: u32 = 1;
 pub const LEDGER_MAX_AGE: Duration = Duration::from_secs(30 * 60);
 
-/// Registro da ultima medicao: a limpeza so aceita ids daqui (S2).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Ledger {
     pub format: u32,
@@ -42,8 +41,6 @@ pub enum LedgerError {
     Corrupt(String),
 }
 
-/// So o campo `format`, lido antes do resto para separar versao antiga de
-/// arquivo corrompido.
 #[derive(Deserialize)]
 struct FormatProbe {
     format: u32,
@@ -60,7 +57,6 @@ impl Ledger {
         }
     }
 
-    /// Grava em arquivo temporario ao lado do destino, sincroniza e renomeia.
     pub fn save(&self, env: &Environment) -> Result<(), CoreError> {
         let path = ledger_file(env);
         fs::create_dir_all(state_dir(env))?;
@@ -72,8 +68,6 @@ impl Ledger {
         Ok(())
     }
 
-    /// Le o ledger e recusa um que seja de outra versao, de outro usuario,
-    /// de outra pasta pessoal ou mais velho que `LEDGER_MAX_AGE` (S2).
     pub fn load_fresh(env: &Environment) -> Result<Ledger, LedgerError> {
         let text = match fs::read_to_string(ledger_file(env)) {
             Ok(text) => text,
@@ -141,14 +135,12 @@ fn unix_secs(moment: SystemTime) -> u64 {
         .map_or(0, |elapsed| elapsed.as_secs())
 }
 
-/// Lock exclusivo de instancia (S13), liberado no `Drop`.
 #[derive(Debug)]
 pub struct InstanceLock {
     file: File,
 }
 
 impl InstanceLock {
-    /// Tenta o lock sem esperar: se outra execucao o tem, devolve `Busy`.
     pub fn acquire(env: &Environment) -> Result<InstanceLock, CoreError> {
         fs::create_dir_all(state_dir(env))?;
         let file = OpenOptions::new()

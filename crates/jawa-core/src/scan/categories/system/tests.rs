@@ -12,7 +12,6 @@ use crate::system::runner::{CommandOutput, FakeRunner};
 
 const MIB: u64 = 1024 * 1024;
 
-/// Saida real de `snap list --all` (recortada), com 3 revisoes desativadas.
 const SNAP_LIST: &str = "\
 Name                       Version                         Rev    Tracking         Publisher      Notes
 bare                       1.0                             5      latest/stable    canonical**    base

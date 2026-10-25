@@ -1,5 +1,3 @@
-//! Execucao de cada item: apagar, mandar para a Lixeira ou rodar o comando.
-
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -21,8 +19,6 @@ pub(super) fn perform(finding: &Finding, ctx: &ExecContext) -> ItemOutcome {
     }
 }
 
-/// Resolve a fronteira de novo logo antes de agir e age sobre o caminho
-/// resolvido (pai canonico + nome), o mesmo que passou nas travas.
 fn act_on_path(
     finding: &Finding,
     path: &Path,
@@ -39,7 +35,6 @@ fn act_on_path(
     }
 }
 
-/// Sem seguir symlink: um link e apagado como link.
 fn remove_path(path: &Path) -> io::Result<()> {
     if fs::symlink_metadata(path)?.is_dir() {
         fs::remove_dir_all(path)
