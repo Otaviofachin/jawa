@@ -1,0 +1,109 @@
+Screen {
+    layout: vertical;
+    background: $background;
+}
+
+#disk {
+    height: 3;
+    border: round $primary;
+    border-title-color: $text;
+    border-title-style: bold;
+    border-subtitle-align: right;
+    border-subtitle-color: $text;
+    padding: 0 1;
+}
+
+#disk-bar {
+    width: 1fr;
+}
+
+#disk-bar Bar {
+    width: 1fr;
+}
+
+#disk-used {
+    width: auto;
+    padding-left: 2;
+}
+
+#main {
+    height: 1fr;
+}
+
+#tree {
+    width: 2fr;
+    border: round $primary;
+    border-title-style: bold;
+    padding: 0 1;
+}
+
+#tree:focus {
+    border: round $accent;
+}
+
+#details {
+    width: 1fr;
+    height: 100%;
+    min-width: 26;
+    border: round $primary;
+    border-title-style: bold;
+    padding: 0 1;
+}
+
+#actions {
+    height: 1;
+    padding: 0 1;
+}
+
+#counter {
+    width: 1fr;
+}
+
+#actions Button {
+    margin-left: 2;
+}
+
+ConfirmScreen, ProgressScreen, ResultScreen, HelpScreen {
+    align: center middle;
+    background: $background 60%;
+}
+
+#confirm-box, #result-box, #help-box, #progress-box {
+    width: 80%;
+    max-width: 100;
+    height: auto;
+    max-height: 90%;
+    border: round $accent;
+    border-title-style: bold;
+    background: $surface;
+    padding: 0 1;
+}
+
+#confirm-list {
+    height: auto;
+    max-height: 12;
+}
+
+.confirm-note {
+    width: 100%;
+    padding-top: 1;
+}
+
+#confirm-word {
+    margin-top: 1;
+}
+
+#confirm-buttons {
+    height: 1;
+    margin-top: 1;
+    align-horizontal: right;
+}
+
+#confirm-buttons Button, #result-box Button {
+    margin-left: 2;
+}
+
+#result-box VerticalScroll {
+    height: auto;
+    max-height: 20;
+}

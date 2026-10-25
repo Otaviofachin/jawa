@@ -1,12 +1,9 @@
-//! Formatacao de texto para o terminal, compartilhada pela CLI e pela TUI.
-
 use std::borrow::Cow;
 
 use jawa_core::clean::CleanReport;
 use jawa_core::model::finding::{Reversibility, Risk};
 use jawa_core::scan::categories::RECLAIM_COMMAND;
 
-/// Dica do resultado quando o disco liberou bem menos do que devia.
 pub const SNAPSHOT_HINT: &str = "Parte do espaço pode estar presa em snapshots (Btrfs/Timeshift).";
 
 const UNITS: [&str; 5] = ["B", "kB", "MB", "GB", "TB"];
@@ -16,9 +13,6 @@ const DAYS_TO_EPOCH_SHIFT: i64 = 719_468;
 
 const REPLACEMENT: char = '\u{fffd}';
 
-/// Texto vindo do disco ou de outro programa, pronto para o terminal: um nome
-/// de arquivo com ESC, quebra de linha ou inversao bidi nao mexe na tela nem
-/// disfarca o que vai ser apagado.
 pub fn display_safe(text: &str) -> Cow<'_, str> {
     if !text.chars().any(is_unsafe_char) {
         return Cow::Borrowed(text);
@@ -34,7 +28,6 @@ fn is_unsafe_char(c: char) -> bool {
     c.is_control() || matches!(c, '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}')
 }
 
-/// Unidades decimais (kB/MB/GB), como o `df -H`, com virgula decimal.
 pub fn human_bytes(bytes: u64) -> String {
     if bytes < 1000 {
         return format!("{bytes} B");
@@ -72,7 +65,6 @@ pub fn reversibility_label(reversibility: Reversibility) -> &'static str {
     }
 }
 
-/// Tabela com colunas alinhadas pela largura em caracteres.
 pub fn render_table(headers: &[&str], rows: &[Vec<String>], right_aligned: &[usize]) -> String {
     let widths: Vec<usize> = (0..headers.len())
         .map(|column| {
@@ -109,7 +101,6 @@ fn pad(cell: &str, width: usize, right: bool) -> String {
     }
 }
 
-/// Data e hora em UTC, no formato `2026-10-17 14:03`.
 pub fn format_utc(unix_secs: u64) -> String {
     let days = i64::try_from(unix_secs / SECONDS_PER_DAY).unwrap_or(0);
     let (year, month, day) = civil_from_days(days);
@@ -119,7 +110,6 @@ pub fn format_utc(unix_secs: u64) -> String {
     format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}")
 }
 
-/// Dias desde 1970-01-01 para (ano, mes, dia), no calendario gregoriano.
 fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let shifted = days + DAYS_TO_EPOCH_SHIFT;
     let era = shifted.div_euclid(146_097);
@@ -138,8 +128,6 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
     (year, month, day)
 }
 
-/// Linhas de espaco do resultado: o estimado, o que voltou ao disco e o que
-/// ainda nao voltou (Lixeira e VM do Docker Desktop), com o que fazer.
 pub fn space_lines(report: &CleanReport) -> Vec<String> {
     let mut lines = vec![
         format!("Espaço estimado: {}", human_bytes(report.estimated_bytes)),

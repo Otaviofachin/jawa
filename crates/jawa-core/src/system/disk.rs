@@ -1,13 +1,11 @@
 use std::io;
 use std::path::Path;
 
-/// Espaco livre para usuarios comuns (`f_bavail * f_frsize`).
 pub fn free_bytes(path: &Path) -> io::Result<u64> {
     let stats = rustix::fs::statvfs(path).map_err(io::Error::from)?;
     Ok(stats.f_bavail.saturating_mul(stats.f_frsize))
 }
 
-/// Tamanho total do sistema de arquivos (`f_blocks * f_frsize`).
 pub fn total_bytes(path: &Path) -> io::Result<u64> {
     let stats = rustix::fs::statvfs(path).map_err(io::Error::from)?;
     Ok(stats.f_blocks.saturating_mul(stats.f_frsize))

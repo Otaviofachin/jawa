@@ -1,5 +1,3 @@
-//! Teclas de cada tela: navegacao, marcacao, confirmacao com `apagar` e rolagem.
-
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use jawa_core::clean::{CleanRequest, Progress};
 use jawa_core::model::finding::{CategoryId, FindingId};
@@ -31,7 +29,6 @@ pub(super) fn is_ctrl_c(key: &KeyEvent) -> bool {
     key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)
 }
 
-/// `↑/↓` e `j/k`; devolve se a tecla era de movimento.
 pub(super) fn move_cursor(model: &mut Model, code: KeyCode, len: usize) -> bool {
     match code {
         KeyCode::Up | KeyCode::Char('k') => model.cursor = model.cursor.saturating_sub(1),
@@ -45,7 +42,6 @@ pub(super) fn move_cursor(model: &mut Model, code: KeyCode, len: usize) -> bool 
     true
 }
 
-/// Teclas que valem na visao geral, na categoria e no resultado.
 pub(super) fn on_global_key(model: &mut Model, key: KeyEvent) -> Vec<Effect> {
     match key.code {
         KeyCode::Char('q') => return vec![Effect::Quit],
@@ -114,7 +110,6 @@ pub(super) fn open_confirm(model: &mut Model) {
     }
 }
 
-/// Com irreversivel marcado, as letras vao para o campo `apagar`.
 pub(super) fn on_confirm_key(model: &mut Model, key: KeyEvent) -> Vec<Effect> {
     let typing = model.has_irreversible_selection();
     if scroll_key(model, key.code, !typing) {
@@ -177,7 +172,6 @@ pub(super) fn confirm_clean(model: &mut Model) -> Vec<Effect> {
     })]
 }
 
-/// Durante a limpeza, sair vira cancelar: o item atual termina antes.
 pub(super) fn on_cleaning_key(model: &mut Model, key: KeyEvent) -> Vec<Effect> {
     let wants_out = key.code == KeyCode::Char('q') || is_ctrl_c(&key);
     if !wants_out {
@@ -213,8 +207,6 @@ pub(super) fn on_text_key(model: &mut Model, key: KeyEvent) -> Vec<Effect> {
     Vec::new()
 }
 
-/// Setas, PageUp/PageDown e Home/End rolam; `j/k` so quando `letters`
-/// (no campo `apagar` as letras sao texto). Devolve se a tecla era de rolagem.
 pub(super) fn scroll_key(model: &mut Model, code: KeyCode, letters: bool) -> bool {
     let limit = scroll_limit(model);
     let next = match code {
@@ -232,8 +224,6 @@ pub(super) fn scroll_key(model: &mut Model, code: KeyCode, letters: bool) -> boo
     true
 }
 
-/// Teto da rolagem pelo tamanho do conteudo, para a rolagem nao acumular
-/// alem do fim (a view ainda ajusta pelo numero real de linhas).
 pub(super) fn scroll_limit(model: &Model) -> u16 {
     let content_lines = match model.screen {
         Screen::Confirm => model.selected_findings().len(),
@@ -244,6 +234,5 @@ pub(super) fn scroll_limit(model: &Model) -> u16 {
         Screen::Guide => model.guide_lines().len() * 2,
         _ => TEXT_SCREEN_ROWS,
     };
-    // Cada linha pode quebrar em duas na tela.
     u16::try_from(content_lines * 2 + SCROLL_MARGIN).unwrap_or(u16::MAX)
 }

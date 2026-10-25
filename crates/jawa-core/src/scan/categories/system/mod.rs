@@ -1,6 +1,3 @@
-//! `sistema`: limpezas que so o root faz. O Jawa mede e mostra o comando,
-//! nunca executa (modo guiado).
-
 mod texts;
 
 use std::fs;
@@ -22,7 +19,6 @@ const JOURNAL_LOCATION: &str = "/var/log/journal";
 const BLOCK_SIZE: u64 = 512;
 const BINARY_UNITS: [(char, i32); 5] = [('B', 0), ('K', 1), ('M', 2), ('G', 3), ('T', 4)];
 
-/// Uso do journald (`journalctl --disk-usage`), em unidades binarias.
 pub fn parse_journal_usage(stdout: &str) -> Option<u64> {
     let (_, after) = stdout.split_once("take up ")?;
     let size = after.split_whitespace().next()?;
@@ -33,7 +29,6 @@ pub fn parse_journal_usage(stdout: &str) -> Option<u64> {
     (bytes.is_finite() && bytes >= 0.0).then_some(bytes as u64)
 }
 
-/// Nome e revisao das linhas de `snap list --all` marcadas `disabled`.
 pub fn parse_snap_disabled(stdout: &str) -> Vec<(String, String)> {
     stdout
         .lines()
@@ -55,7 +50,6 @@ static DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::EXPLANATION,
 };
 
-/// journald, apt, snaps desativados e `/var/crash`, so com o comando guiado.
 pub struct System;
 
 impl Category for System {
@@ -67,8 +61,6 @@ impl Category for System {
         Vec::new()
     }
 
-    /// Cada parte e independente: sem uma ferramenta, as outras aparecem e a
-    /// falta vai para o rodape.
     fn scan(&self, ctx: &ScanContext) -> Result<ScanOutput, ScanProblem> {
         let parts = [
             journal_part(ctx),
@@ -185,7 +177,6 @@ fn snap_finding(ctx: &ScanContext, name: &str, revision: &str) -> Finding {
     })
 }
 
-/// A linha vai ser copiada para um terminal com sudo: so nomes de snap validos.
 fn is_safe_snap_name(name: &str) -> bool {
     !name.is_empty()
         && name
@@ -197,8 +188,6 @@ fn is_revision(revision: &str) -> bool {
     !revision.is_empty() && revision.chars().all(|c| c.is_ascii_digit())
 }
 
-/// Soma o tamanho real dos arquivos de primeiro nivel com o sufixo. Sao
-/// arquivos de root: o tamanho vem dos metadados, sem medir pelo dono.
 fn sum_with_suffix(dir: &Path, suffix: &str) -> u64 {
     let Ok(entries) = fs::read_dir(dir) else {
         return 0;

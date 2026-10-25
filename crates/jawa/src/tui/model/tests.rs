@@ -80,7 +80,6 @@ fn measured(scans: Vec<Msg>) -> Model {
     model
 }
 
-/// O npm-cache e a primeira linha da visao geral.
 fn open_npm_cache(model: &mut Model) {
     press(model, KeyCode::Enter);
     assert_eq!(model.screen, Screen::Category(CategoryId::NpmCache));

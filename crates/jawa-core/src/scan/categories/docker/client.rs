@@ -1,5 +1,3 @@
-//! Leituras do Docker (S1: so comandos de leitura) e interpretacao das saidas.
-
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -20,7 +18,6 @@ pub(super) const DANGLING_ARGS: [&str; 6] = [
     "--format",
     "{{json .}}",
 ];
-/// Containers parados (os estados que nao rodam), com id e nome.
 pub(super) const STOPPED_ARGS: [&str; 10] = [
     "ps",
     "-a",
@@ -43,16 +40,13 @@ pub(super) const COMPOSE_PROJECT_LABEL: &str = "com.docker.compose.project";
 pub(super) const UNKNOWN_CONTEXT: &str = "docker (contexto desconhecido)";
 pub(super) const NO_ANSWER: &str = "motor parado ou sem resposta";
 
-/// O executavel do Docker e o tempo maximo de cada leitura.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Docker {
     pub exe: PathBuf,
     pub read_timeout: Duration,
-    /// Contexto ativo na medicao; a limpeza roda nele mesmo.
     pub context: Option<String>,
 }
 
-/// Bytes recuperaveis segundo `docker system df`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Reclaimable {
     pub images: u64,
@@ -93,7 +87,6 @@ pub(super) struct VolumeSize {
     links: String,
 }
 
-/// Tamanho e numero de containers ligados, segundo `docker system df -v`.
 pub(super) struct VolumeUsage {
     bytes: u64,
     linked: bool,
@@ -105,7 +98,6 @@ pub(super) struct DfVerbose {
     volumes: Vec<VolumeSize>,
 }
 
-/// Tamanho em unidades decimais do Docker (`3.844GB`, `512kB`, `0B`).
 pub fn parse_decimal_size(text: &str) -> Option<u64> {
     let text = text.trim();
     let unit_start = text.find(|c: char| c.is_ascii_alphabetic())?;
@@ -124,7 +116,6 @@ pub fn parse_decimal_size(text: &str) -> Option<u64> {
     (bytes.is_finite() && bytes >= 0.0).then_some(bytes as u64)
 }
 
-/// Espaco recuperavel de imagens, cache de build e containers parados.
 pub fn reclaimable(
     runner: &dyn CommandRunner,
     docker: &Docker,
@@ -149,8 +140,6 @@ pub fn reclaimable(
     Ok(space)
 }
 
-/// Volumes sem nenhum container (nem parado), com o projeto do compose e o
-/// tamanho do `docker system df -v`.
 pub fn dangling_volumes(
     runner: &dyn CommandRunner,
     docker: &Docker,
@@ -177,8 +166,6 @@ pub fn dangling_volumes(
         .collect())
 }
 
-/// Um volume que o `df -v` mostra ligado a algum container fica de fora,
-/// mesmo que o filtro `dangling` o tenha listado (S10).
 pub(super) fn volume_usage(
     runner: &dyn CommandRunner,
     docker: &Docker,
@@ -199,7 +186,6 @@ pub(super) fn volume_usage(
         .collect())
 }
 
-/// `Labels` vem como `chave=valor,chave=valor`.
 pub(super) fn compose_project(labels: &str) -> Option<String> {
     labels
         .split(',')
@@ -209,14 +195,12 @@ pub(super) fn compose_project(labels: &str) -> Option<String> {
         .filter(|project| !project.is_empty())
 }
 
-/// Um container parado medido: o id vai para o `container rm`, o nome para a nota.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoppedContainer {
     pub id: String,
     pub name: String,
 }
 
-/// Containers parados agora; vazio se a leitura falhar (nada e oferecido).
 pub(super) fn stopped_containers(
     runner: &dyn CommandRunner,
     docker: &Docker,
@@ -237,8 +221,6 @@ pub(super) fn stopped_containers(
         .collect()
 }
 
-/// Roda uma leitura. Tempo esgotado ou motor fora do ar viram
-/// `EngineStopped` com o nome do contexto.
 pub(super) fn read(
     runner: &dyn CommandRunner,
     docker: &Docker,
@@ -274,8 +256,6 @@ pub(super) fn engine_is_down(output: &CommandOutput) -> bool {
         .any(|marker| output.stderr.contains(marker))
 }
 
-/// `docker context show` le so a configuracao local: responde mesmo com o
-/// motor parado.
 pub(super) fn engine_stopped(
     runner: &dyn CommandRunner,
     docker: &Docker,
@@ -325,7 +305,6 @@ pub(super) fn docker_for(ctx: &ScanContext) -> Result<Docker, ScanProblem> {
     Ok(docker)
 }
 
-/// `docker context show` le so a configuracao local; `None` se nao responder.
 fn current_context(runner: &dyn CommandRunner, docker: &Docker) -> Option<String> {
     run(runner, docker, &CONTEXT_ARGS)
         .ok()
@@ -334,7 +313,6 @@ fn current_context(runner: &dyn CommandRunner, docker: &Docker) -> Option<String
         .filter(|name| !name.is_empty())
 }
 
-/// Fixa o contexto medido no comando (leitura ou limpeza).
 pub(super) fn context_env(docker: &Docker) -> Vec<(String, String)> {
     docker
         .context

@@ -1,5 +1,3 @@
-//! Comandos do modo guiado para copiar.
-
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;

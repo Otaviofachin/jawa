@@ -1,0 +1,237 @@
+{
+  "categories": [
+    {
+      "explanation": {
+        "effect": "Os arquivos são apagados. O próximo `npm install` ou `npx` baixa de novo o que precisar.",
+        "recommendation": "Pode limpar sem medo quando precisar de espaço.",
+        "recreate_cost": "Só tempo e internet: o primeiro install de cada projeto fica mais lento.",
+        "reversibility": "Regenerável: nada de seu se perde, tudo volta a ser baixado do registry.",
+        "what_it_is": "A cópia local de cada pacote que o npm já baixou (~/.npm/_cacache) e a pasta _npx, com os pacotes que você rodou por npx.",
+        "why_it_grows": "Cada versão de cada pacote instalado fica guardada, e o npm quase nunca apaga nada sozinho."
+      },
+      "footnote": null,
+      "id": "npm-cache",
+      "items": [
+        {
+          "block": null,
+          "bytes": 2097152,
+          "command": null,
+          "id": "75d12fac80",
+          "label": "Cache de pacotes do npm",
+          "location": "~/.npm/_cacache",
+          "note": null,
+          "reversibility": "regenerable",
+          "risk": "safe"
+        }
+      ],
+      "problem": null,
+      "summary": "Cópia local de cada pacote baixado pelo npm e pelo npx.",
+      "title": "Cache do npm"
+    },
+    {
+      "explanation": {
+        "effect": "As pastas são apagadas. Cada ferramenta baixa ou recria o que precisar na próxima vez que rodar.",
+        "recommendation": "Pode limpar quando precisar de espaço, de preferência sem builds rodando.",
+        "recreate_cost": "Tempo e internet na primeira execução de cada ferramenta depois da limpeza.",
+        "reversibility": "Regenerável: nada de seu se perde. A versão do Claude Code em uso (o alvo de ~/.local/bin/claude) nunca é oferecida.",
+        "what_it_is": "Pastas que as ferramentas usam para não baixar ou compilar de novo: navegadores do Playwright, Cypress e Puppeteer, caches do yarn, pnpm, pip, Prisma, Go, node-gyp e TypeScript, miniaturas de imagens, o cache do Gradle, o registry do Cargo e versões antigas do Claude Code.",
+        "why_it_grows": "Cada versão nova de ferramenta, navegador ou dependência é guardada ao lado das antigas, e quase nenhuma ferramenta apaga o que não usa mais."
+      },
+      "footnote": null,
+      "id": "caches-ferramentas",
+      "items": [
+        {
+          "block": null,
+          "bytes": 3145728,
+          "command": null,
+          "id": "0c35f0688b",
+          "label": "Navegadores do Playwright",
+          "location": "~/.cache/ms-playwright",
+          "note": "Voltam com `npx playwright install`.",
+          "reversibility": "regenerable",
+          "risk": "safe"
+        }
+      ],
+      "problem": null,
+      "summary": "Downloads e caches de ferramentas de desenvolvimento, refeitos quando forem precisos.",
+      "title": "Caches de ferramentas"
+    },
+    {
+      "explanation": {
+        "effect": "As pastas de cache são apagadas. O app recria tudo ao abrir. Com o app aberto, o item fica bloqueado.",
+        "recommendation": "Feche o app e limpe quando precisar de espaço.",
+        "recreate_cost": "O app abre mais devagar na primeira vez e baixa de novo o que precisar.",
+        "reversibility": "Regenerável: logins, favoritos e configurações ficam fora dessas pastas.",
+        "what_it_is": "Os caches do Chrome, Chromium, Firefox e Spotify em ~/.cache e as subpastas de cache do VS Code, Slack e Discord em ~/.config. Do ~/.config só entram as pastas de cache conhecidas; configurações, extensões e sessões nunca.",
+        "why_it_grows": "Os apps guardam páginas, imagens, código compilado e logs para abrir mais rápido, e raramente limpam sozinhos."
+      },
+      "footnote": null,
+      "id": "caches-apps",
+      "items": [],
+      "problem": null,
+      "summary": "Caches de navegadores, VS Code, Slack, Discord e Spotify, só com o app fechado.",
+      "title": "Caches de aplicativos"
+    },
+    {
+      "explanation": {
+        "effect": "A pasta é apagada. O próximo build, teste ou `ng serve` a recria.",
+        "recommendation": "Pode limpar. Nos itens marcados Revisar, confira antes se o arquivo assinado tem outra cópia.",
+        "recreate_cost": "O tempo de um build completo; o primeiro build depois fica mais lento.",
+        "reversibility": "Regenerável: a pasta é produto do código-fonte. Exceção: se ela guarda um APK, AAB, IPA ou keystore assinado, o item vira Revisar, porque refazer a assinatura pode não ser possível.",
+        "what_it_is": "Pastas que as ferramentas de build criam dentro dos seus repositórios: dist, build, www, coverage, .angular/cache e .nx/cache. Só entram as que o git ignora; nada versionado é oferecido.",
+        "why_it_grows": "Cada build reescreve a saída e os caches guardam versões antigas de tudo o que já foi compilado."
+      },
+      "footnote": null,
+      "id": "saidas-build",
+      "items": [],
+      "problem": "a ferramenta git não foi encontrada",
+      "summary": "Pastas geradas por builds (dist, build, www, coverage e caches de build) ignoradas pelo git.",
+      "title": "Saídas de build"
+    },
+    {
+      "explanation": {
+        "effect": "A pasta é apagada. O próximo `cargo build` recompila tudo do zero.",
+        "recommendation": "Pode limpar. Feche `cargo watch` e o rust-analyzer do projeto antes.",
+        "recreate_cost": "Minutos de compilação por projeto grande; o primeiro build depois é lento.",
+        "reversibility": "Regenerável: tudo vem do código-fonte e das dependências.",
+        "what_it_is": "A pasta target/ ao lado de um Cargo.toml (e src-tauri/target), onde o cargo guarda objetos compilados, dependências e binários de debug e release.",
+        "why_it_grows": "Cada versão do compilador e cada mudança de dependência deixa artefatos novos, e o cargo não apaga os antigos."
+      },
+      "footnote": null,
+      "id": "rust-target",
+      "items": [],
+      "problem": "a ferramenta git não foi encontrada",
+      "summary": "Pastas target/ de projetos Rust, com tudo o que o cargo compilou.",
+      "title": "Builds do Rust"
+    },
+    {
+      "explanation": {
+        "effect": "A pasta é apagada. Para voltar a trabalhar no projeto, rode a instalação indicada na nota.",
+        "recommendation": "Limpe os projetos que você não vai abrir logo. Atenção aos que usam registry privado: confira o token antes.",
+        "recreate_cost": "Uma instalação completa, de alguns segundos a vários minutos.",
+        "reversibility": "Regenerável pelo lockfile, desde que haja internet e, em projetos com registry privado, um token válido.",
+        "what_it_is": "A pasta node_modules de projetos que você não toca há um tempo. Projeto parado é o que não teve commit, checkout nem git add no período configurado (`idle_days`, 30 dias por padrão) e não tem nenhum processo rodando dentro.",
+        "why_it_grows": "Cada projeto instala sua própria cópia de todas as dependências, e elas ficam no disco mesmo quando o projeto é esquecido."
+      },
+      "footnote": null,
+      "id": "node-modules-parados",
+      "items": [],
+      "problem": "a ferramenta git não foi encontrada",
+      "summary": "node_modules de projetos sem atividade há semanas.",
+      "title": "Dependências de projetos parados"
+    },
+    {
+      "explanation": {
+        "effect": "A pasta da versão é apagada, junto com os pacotes globais instalados nela.",
+        "recommendation": "Limpe as versões que ninguém pede. Sem a pasta de projetos configurada, o Jawa não sabe o que os .nvmrc pedem: confira antes.",
+        "recreate_cost": "Um download de algumas dezenas de MB mais a reinstalação dos globais.",
+        "reversibility": "Regenerável: `nvm install` baixa a versão de novo, mas os pacotes globais precisam ser reinstalados à mão (a nota lista quais).",
+        "what_it_is": "Cada pasta em ~/.nvm/versions/node é uma versão completa do Node, com seus pacotes globais. Ficam protegidas a versão padrão (alias default), as pedidas por qualquer .nvmrc dos projetos e a ativa no PATH.",
+        "why_it_grows": "Cada `nvm install` guarda uma versão nova e nada remove as antigas."
+      },
+      "footnote": null,
+      "id": "nvm-versoes",
+      "items": [],
+      "problem": "a ferramenta nvm não foi encontrada",
+      "summary": "Versões do Node instaladas pelo nvm que nenhum projeto pede.",
+      "title": "Versões antigas do Node (nvm)"
+    },
+    {
+      "explanation": {
+        "effect": "O Jawa roda `docker image prune -a -f` e `docker builder prune -a -f`. Imagens em uso por algum container ficam.",
+        "recommendation": "Pode limpar. Precisa do Docker rodando.",
+        "recreate_cost": "Downloads e builds mais lentos na próxima vez.",
+        "reversibility": "Regenerável: as imagens voltam com `docker pull` ou com o próximo build.",
+        "what_it_is": "Imagens que nenhum container usa e as camadas que o BuildKit guarda para acelerar os builds.",
+        "why_it_grows": "Cada `docker pull` e cada build deixa imagens e camadas novas, e o Docker não apaga as antigas sozinho."
+      },
+      "footnote": null,
+      "id": "docker-imagens",
+      "items": [],
+      "problem": "a ferramenta docker não foi encontrada",
+      "summary": "Imagens sem container e o cache de build do Docker, com o tamanho do `docker system df`.",
+      "title": "Docker: imagens e cache de build"
+    },
+    {
+      "explanation": {
+        "effect": "Cada volume escolhido é apagado com `docker volume rm <nome>`; os containers parados medidos, com `docker container rm <ids>`. Nunca há `prune`.",
+        "recommendation": "Escolha volume por volume e só os de projetos que você não usa mais.",
+        "recreate_cost": "Recriar o banco local do zero, com migrações e dados de teste.",
+        "reversibility": "Irreversível: os dados do volume ou do container somem de vez.",
+        "what_it_is": "Volumes que nenhum container usa, nem parado, cada um com o projeto do compose que o criou, e os containers parados.",
+        "why_it_grows": "Bancos locais (Postgres, MySQL, Redis) gravam nos volumes, e eles ficam no disco quando o projeto é desmontado."
+      },
+      "footnote": null,
+      "id": "docker-volumes",
+      "items": [],
+      "problem": "a ferramenta docker não foi encontrada",
+      "summary": "Volumes sem nenhum container, um por um, e os containers parados.",
+      "title": "Docker: volumes e containers parados"
+    },
+    {
+      "explanation": {
+        "effect": "Com o Docker Desktop instalado, o Jawa só mostra o comando oficial de recuperação de espaço. Sem o Docker Desktop, oferece apagar a pasta da máquina virtual que sobrou.",
+        "recommendation": "Com o Docker Desktop instalado, rode o comando guiado. Sem ele, apague só se não precisar de nada que estava lá.",
+        "recreate_cost": "Baixar de novo todas as imagens e recriar containers e volumes.",
+        "reversibility": "Irreversível: apagar o disco leva junto tudo o que estava no Docker Desktop.",
+        "what_it_is": "O disco da máquina virtual do Docker Desktop (~/.docker/desktop/vms/0/data/Docker.raw), onde ficam todas as imagens, containers e volumes.",
+        "why_it_grows": "O arquivo cresce com o uso e não devolve sozinho o espaço do que foi apagado dentro dele."
+      },
+      "footnote": null,
+      "id": "docker-desktop-disco",
+      "items": [],
+      "problem": null,
+      "summary": "O arquivo Docker.raw da máquina virtual do Docker Desktop, com o tamanho real.",
+      "title": "Disco virtual do Docker Desktop"
+    },
+    {
+      "explanation": {
+        "effect": "Os itens escolhidos vão para a Lixeira.",
+        "recommendation": "Revise item por item: o Jawa não sabe o que ainda é importante para você.",
+        "recreate_cost": "Baixar de novo, se precisar.",
+        "reversibility": "Pela Lixeira: dá para restaurar até você esvaziá-la. O espaço só volta depois disso.",
+        "what_it_is": "Itens da pasta de downloads: pacotes de instalação (.deb, .rpm, .AppImage, .iso, .img, .tar.gz, .tgz, .tar.xz, .zip) de 10 MB ou mais, qualquer item de 100 MB ou mais e itens de 10 MB ou mais parados há 90 dias. Ocultos e downloads em andamento ficam de fora.",
+        "why_it_grows": "Instaladores e arquivos baixados uma vez ficam esquecidos depois de usados."
+      },
+      "footnote": "Não há pasta de downloads.",
+      "id": "downloads",
+      "items": [],
+      "problem": null,
+      "summary": "Pacotes, arquivos grandes e itens esquecidos na pasta de downloads, enviados à Lixeira.",
+      "title": "Downloads grandes e antigos"
+    },
+    {
+      "explanation": {
+        "effect": "O Jawa nunca roda nada aqui: ele mede e mostra o comando com sudo para você rodar, se quiser.",
+        "recommendation": "Rode os comandos que fizerem sentido para você, um de cada vez.",
+        "recreate_cost": "Os pacotes são baixados de novo quando precisar; logs e relatórios não voltam.",
+        "reversibility": "Os comandos apagam de vez: logs antigos, pacotes baixados, a revisão anterior do snap e os relatórios de falha.",
+        "what_it_is": "Arquivos do sistema que só o root pode apagar: o journald acima de 200 MB, os .deb baixados pelo apt, as revisões desativadas de snaps e os relatórios em /var/crash.",
+        "why_it_grows": "O sistema guarda logs, pacotes baixados e versões anteriores de snaps para poder voltar atrás."
+      },
+      "footnote": "journalctl não foi encontrado; o journald não foi medido. apt não foi encontrado; os pacotes baixados não foram medidos. snap não foi encontrado; as revisões de snap não foram medidas.",
+      "id": "sistema",
+      "items": [
+        {
+          "block": null,
+          "bytes": 2097152,
+          "command": "sudo rm -f /var/crash/*.crash",
+          "id": "14b787b8f2",
+          "label": "Relatórios de falha",
+          "location": "/var/crash",
+          "note": "Relatórios de programas que travaram; só servem para enviar aos desenvolvedores. Para limpar, rode: sudo rm -f /var/crash/*.crash",
+          "reversibility": "irreversible",
+          "risk": "guided"
+        }
+      ],
+      "problem": null,
+      "summary": "Logs do journald, pacotes do apt, revisões antigas de snap e relatórios de falha.",
+      "title": "Sistema (modo guiado)"
+    }
+  ],
+  "disk": {
+    "free": 49900000000,
+    "total": 249800000000
+  },
+  "version": 1
+}

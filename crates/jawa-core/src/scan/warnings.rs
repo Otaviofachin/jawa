@@ -1,5 +1,3 @@
-//! Avisos cruzados mostrados na confirmacao, conforme a combinacao escolhida.
-
 use crate::model::finding::{Action, CategoryId, Finding, Reversibility};
 
 const REINSTALL_DOWNLOADS: &str = "As reinstalações vão baixar tudo da internet.";
@@ -8,7 +6,6 @@ const PRIVATE_REGISTRY: &str =
 const TRASH_SPACE: &str = "O espaço só volta quando você esvaziar a Lixeira.";
 const PRIVATE_REGISTRY_MARK: &str = "registry privado";
 
-/// Avisos da selecao, na ordem da especificacao e sem repeticao.
 pub fn selection_warnings(selected: &[&Finding]) -> Vec<&'static str> {
     let has_category = |id: CategoryId| selected.iter().any(|finding| finding.category == id);
     let mut warnings = Vec::new();

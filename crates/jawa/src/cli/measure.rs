@@ -4,8 +4,9 @@ use jawa_core::model::finding::{CategoryId, Finding};
 use jawa_core::safety::ledger::InstanceLock;
 use jawa_core::scan::CategoryScan;
 use jawa_core::scan::categories::registry;
-use serde_json::json;
+use jawa_core::system::disk::{free_bytes, total_bytes};
 
+use super::json::{DiskSpace, measure_view};
 use super::{CliError, CliResult};
 use crate::format::{display_safe, human_bytes, render_table, reversibility_label, risk_label};
 use jawa_core::api::Session;
@@ -26,7 +27,7 @@ pub fn run(session: &Session, only: Option<CategoryId>, as_json: bool) -> CliRes
     let (ledger, scans) = session.measure(only, &|_| {});
     ledger.save(&session.env)?;
     if as_json {
-        print_json(&ledger.findings, &scans)?;
+        print_json(session, &scans)?;
     } else {
         print_report(&scans);
     }
@@ -48,16 +49,13 @@ fn ensure_available(only: Option<CategoryId>) -> Result<(), CliError> {
     }
 }
 
-fn print_json(findings: &[Finding], scans: &[CategoryScan]) -> Result<(), CliError> {
-    let problems: Vec<_> = scans
-        .iter()
-        .filter_map(|scan| {
-            let problem = scan.result.as_ref().err()?;
-            Some(json!({ "categoria": scan.id, "mensagem": problem.to_string() }))
-        })
-        .collect();
-    let report = json!({ "itens": findings, "problemas": problems });
-    let text = serde_json::to_string_pretty(&report)
+fn print_json(session: &Session, scans: &[CategoryScan]) -> Result<(), CliError> {
+    let home = &session.env.home;
+    let disk = DiskSpace {
+        free: free_bytes(home).unwrap_or(0),
+        total: total_bytes(home).unwrap_or(0),
+    };
+    let text = serde_json::to_string_pretty(&measure_view(scans, disk))
         .map_err(|error| CliError::Message(error.to_string()))?;
     println!("{text}");
     Ok(())

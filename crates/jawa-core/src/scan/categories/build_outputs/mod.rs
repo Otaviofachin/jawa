@@ -31,7 +31,6 @@ static DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::EXPLANATION,
 };
 
-/// `dist`, `build`, `www`, `coverage` e caches de build ignorados pelo git (S5).
 pub struct BuildOutputs;
 
 impl Category for BuildOutputs {
@@ -106,7 +105,6 @@ fn build_item<'a>(repo: &Path, path: &'a Path) -> PathItem<'a> {
     }
 }
 
-/// A pasta que contem o item (`name` pode ter barra, como `.angular/cache`).
 fn container_of<'a>(path: &'a Path, name: &str) -> &'a Path {
     path.ancestors()
         .nth(name.split('/').count())
@@ -125,8 +123,6 @@ fn describe_build_name(name: &str) -> &'static str {
     }
 }
 
-/// Primeiro arquivo assinavel (apk, aab, ipa, keystore, jks, p12) dentro de
-/// `dir`, sem diferenciar maiusculas e sem seguir symlink.
 fn first_signed_artifact(dir: &Path) -> Option<String> {
     WalkDir::new(dir)
         .follow_links(false)

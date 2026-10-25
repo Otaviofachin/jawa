@@ -1,5 +1,3 @@
-//! Ajuda com as teclas.
-
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::text::Line;

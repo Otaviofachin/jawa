@@ -31,24 +31,43 @@ Cada arquivo vem com um `.sha256` para conferir (`sha256sum -c`).
 cargo install --git https://github.com/Otaviofachin/jawa jawa
 ```
 
+**Interface nova (recomendada)**, feita com [Textual](https://textual.textualize.io). Precisa do [uv](https://docs.astral.sh/uv/) e do `jawa` instalado por um dos jeitos acima:
+
+```bash
+uv tool install "git+https://github.com/Otaviofachin/jawa#subdirectory=tui"
+```
+
+Com ela instalada, `jawa` abre a interface nova; sem ela, abre a interface embutida.
+
 ## Como usar
 
-Rode `jawa`. A interface abre no terminal, mede tudo o que dá para limpar (só lendo, nunca apagando), mostra o que cada categoria ocupa e deixa você marcar o que limpar.
+Rode `jawa`. A interface abre no terminal e mede tudo o que dá para limpar (só lendo, nunca apagando):
+
+```
+╭─ 🪐 Jawa ────────────────────────────────────────────────────────────╮
+│ ██████████████████████████████████████████░░░░░░░░░░░    80% usado   │
+╰─────────────────────────────────────────── 49,9 GB livres de 249,8 GB ─╯
+╭─ O que dá para limpar ───────────────────────────────╮╭─ Detalhes ─────────╮
+│ ▼ 📦 Cache do npm        2,4 GB ██▌      ● Seguro     ││ 📦 Cache do npm    │
+│   ├── ☑ _cacache         2,3 GB                       ││                    │
+│   └── ☑ _npx           120,0 MB                       ││ Cópia de cada      │
+│ ▶ 💤 Projetos parados   19,7 GB ████████ ● Revisar    ││ pacote baixado     │
+│ ▶ 💻 Sistema (guiado)    4,7 GB ██▌      🔒 Só com sudo││ pelo npm.          │
+╰──────────────────────────────────────────────────────╯╰────────────────────╯
+☑ 49 itens · 52,7 GB                 Limpar marcados   Medir de novo   Ajuda
+```
 
 | Tecla | O que faz |
 |---|---|
-| `↑`/`↓` ou `j`/`k` | move o cursor (ou rola o texto) |
-| `Enter` | abre a categoria |
-| `Espaço` | marca ou desmarca o item |
-| `e` | explica a categoria |
-| `l` | confirma a limpeza dos itens marcados |
-| `g` | comandos guiados para copiar |
-| `m` | mede de novo (desmarca tudo) |
+| `↑`/`↓` ou `j`/`k` | move o cursor |
+| `Enter` | abre a categoria (num item, marca ou desmarca) |
+| `Espaço` | marca ou desmarca (na categoria, todos os itens dela) |
+| `l` | limpa os itens marcados (abre a confirmação) |
+| `m` | mede de novo |
 | `?` | ajuda |
-| `Esc` | volta |
-| `q` | sai (durante a limpeza, cancela) |
+| `q` | sai |
 
-`Seguro` vem marcado; `Revisar`, desmarcado; `Guiado` e itens bloqueados não podem ser marcados. Itens irreversíveis pedem que você digite `apagar` na confirmação. No fim, a tela de resultado compara o espaço estimado com o que voltou ao disco e mostra o que ainda está na Lixeira ou dentro da VM do Docker Desktop.
+Também dá para clicar com o mouse. As etiquetas dizem o risco de cada categoria: `● Seguro` (volta sozinho, já vem marcado), `● Revisar` (você escolhe item por item) e `🔒 Só com sudo` (o Jawa só mostra o comando para você rodar). Itens irreversíveis pedem que você digite `apagar` na confirmação. No fim, o resultado mostra o que voltou ao disco e o que ainda está na Lixeira ou dentro da VM do Docker Desktop.
 
 ### Configuração
 
@@ -149,13 +168,14 @@ Fontes das medidas preventivas:
 
 ## Desenvolvimento
 
-Para abrir o Jawa a partir do código:
+Para abrir o Jawa a partir do código, instale uma vez a interface em modo editável e use o `cargo dev`:
 
 ```bash
+uv tool install --editable ./tui
 cargo dev
 ```
 
-O `cargo dev` é um alias (em `.cargo/config.toml`) que compila em modo release e abre a interface. Para checar o código:
+O `cargo dev` é um alias (em `.cargo/config.toml`) que compila o `jawa` em modo release e o roda; ele abre o `jawa-tui` se estiver instalado. Para checar o código Rust:
 
 ```bash
 cargo fmt --check
@@ -165,9 +185,22 @@ cargo test --all-features
 
 Rode os testes sempre em build **debug**: os testes de ponta a ponta do binário dependem de `JAWA_SYSTEM_ROOT`, que só existe com `debug_assertions`. Não use `cargo test --release`.
 
-Estrutura do workspace:
+A interface Textual fica em `tui/` (Python ≥ 3.11):
+
+```bash
+cd tui
+uv run pytest            # JAWA_TEST_BIN=../target/debug/jawa liga o teste com o binário real
+uv run mypy src tests
+uv run ruff check
+```
+
+Estrutura do repositório:
 
 ```
+tui/src/jawa_tui/         interface Textual: chama o jawa com --json e só desenha
+├── app.py, jawa.tcss     app, teclas e estilo
+├── widgets/              cabeçalho do disco, árvore, detalhes, barra de ações
+└── screens/              confirmação, progresso, resultado, ajuda
 crates/
 ├── jawa-core/src/        biblioteca, sem nada de terminal
 │   ├── api.rs            fachada pública: Session (medir, limpar, histórico)
@@ -178,8 +211,8 @@ crates/
 │   │   └── categories/   uma pasta por categoria (lógica, textos e testes)
 │   └── clean/            limpeza: travas por item, execução e relatório
 └── jawa/src/             binário
-    ├── cli/              medir, explicar, limpar, historico
-    └── tui/              model/ (estado e teclas), view/ (uma tela por arquivo), worker
+    ├── cli/              medir, explicar, limpar, historico (+ --json para a interface)
+    └── tui/              interface embutida (ratatui), usada sem o jawa-tui
 ```
 
 Os testes de unidade ficam em `tests.rs` ao lado do módulo que testam; os testes do binário inteiro ficam em `crates/jawa/tests/`.

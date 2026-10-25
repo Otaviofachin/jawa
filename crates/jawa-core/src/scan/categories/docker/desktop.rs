@@ -1,6 +1,3 @@
-//! `docker-desktop-disco`: o Docker.raw nunca e apagado com o Docker Desktop
-//! instalado (S9).
-
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -30,7 +27,6 @@ static DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::DESKTOP_EXPLANATION,
 };
 
-/// O disco virtual do Docker Desktop: guiado se instalado (S9), Revisar se nao.
 pub struct DockerDesktopDisk;
 
 impl Category for DockerDesktopDisk {
@@ -38,8 +34,6 @@ impl Category for DockerDesktopDisk {
         &DESCRIPTOR
     }
 
-    /// Sem raizes com o Docker Desktop instalado: um `Delete` medido antes da
-    /// instalacao e recusado pela fronteira na hora de limpar (S9).
     fn roots(&self, ctx: &ScanContext) -> Vec<PathBuf> {
         if ctx.system.docker_desktop_install.exists() {
             return Vec::new();
@@ -47,7 +41,6 @@ impl Category for DockerDesktopDisk {
         vec![desktop_dir(ctx)]
     }
 
-    /// Processos do Docker Desktop (o `comm` e cortado em 15 caracteres).
     fn watched_processes(&self) -> &'static [&'static str] {
         &DESKTOP_PROCESSES
     }
@@ -74,8 +67,6 @@ fn desktop_dir(ctx: &ScanContext) -> PathBuf {
     ctx.env.home.join(DESKTOP_DIR)
 }
 
-/// Com o Docker Desktop instalado, so o comando oficial. O tamanho e o real
-/// (blocos alocados): o Docker.raw e esparso e o aparente engana.
 fn guided_finding(ctx: &ScanContext) -> Result<Option<Finding>, ScanProblem> {
     let raw = desktop_dir(ctx).join(RAW_DISK);
     let Some(bytes) = allocated_bytes(&raw, ctx.env.uid)? else {

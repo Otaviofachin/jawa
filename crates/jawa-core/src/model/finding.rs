@@ -16,7 +16,6 @@ use crate::system::processes::{Holder, describe_holders};
 
 const ID_LENGTH: usize = 10;
 
-/// Id de categoria, com o texto da especificacao (por exemplo `npm-cache`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CategoryId {
     #[serde(rename = "npm-cache")]
@@ -120,20 +119,15 @@ pub struct CommandSpec {
     pub program: PathBuf,
     pub args: Vec<String>,
     pub stdin: Option<Vec<u8>>,
-    /// Variaveis extras, alem de `LC_ALL=C`.
     #[serde(default)]
     pub env: Vec<(String, String)>,
     pub timeout: Duration,
 }
 
-/// Contexto do Docker Desktop no Linux; o que ele apaga fica dentro da VM.
 pub const DOCKER_DESKTOP_CONTEXT: &str = "desktop-linux";
-/// Variavel que fixa o contexto do Docker no comando medido.
 pub const DOCKER_CONTEXT_VAR: &str = "DOCKER_CONTEXT";
 
 impl CommandSpec {
-    /// O comando roda no Docker Desktop: o espaco liberado fica dentro do
-    /// disco virtual ate ele ser recuperado.
     pub fn runs_in_docker_desktop(&self) -> bool {
         self.env
             .iter()
@@ -155,7 +149,6 @@ pub enum Action {
 }
 
 impl Action {
-    /// Caminho afetado pela acao, quando ela age sobre um caminho.
     pub fn path(&self) -> Option<&Path> {
         match self {
             Action::Delete(path) | Action::Trash(path) => Some(path),
@@ -164,7 +157,6 @@ impl Action {
     }
 }
 
-/// Impressao digital conferida antes de agir (S3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Fingerprint {
     pub device: u64,
@@ -172,7 +164,6 @@ pub struct Fingerprint {
     pub modified_secs: i64,
 }
 
-/// Le a impressao digital do proprio caminho, sem seguir symlink.
 pub fn fingerprint_of(path: &Path) -> io::Result<Fingerprint> {
     let metadata = fs::symlink_metadata(path)?;
     Ok(Fingerprint {
@@ -213,7 +204,6 @@ pub struct InvalidFindingId(pub String);
 pub struct FindingId(String);
 
 impl FindingId {
-    /// `sha256(categoria + 0x00 + chave da acao)`, cortado em 10 caracteres hex.
     pub fn of(category: CategoryId, action: &Action) -> FindingId {
         let mut hasher = Sha256::new();
         hasher.update(category.as_str().as_bytes());

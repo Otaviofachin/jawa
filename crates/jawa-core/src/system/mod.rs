@@ -1,5 +1,3 @@
-//! Tudo que conversa com o Linux: ambiente, configuracao, disco, processos e comandos.
-
 pub mod config;
 pub mod disk;
 pub mod env;

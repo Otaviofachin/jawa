@@ -8,7 +8,6 @@ use crate::error::CoreError;
 use crate::model::finding::FindingId;
 use crate::system::env::Environment;
 
-/// Uma linha do historico (S12).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AuditEntry {
     pub at_secs: u64,
@@ -19,15 +18,12 @@ pub struct AuditEntry {
     pub outcome: String,
 }
 
-/// Historico em JSONL em `state_dir/jawa/historico.jsonl`.
 #[derive(Debug, Clone)]
 pub struct AuditLog {
     path: PathBuf,
 }
 
 impl AuditLog {
-    /// Abre o arquivo em modo append ja aqui: sem permissao de escrita, a
-    /// falha aparece antes de qualquer limpeza (S12).
     pub fn open(env: &Environment) -> Result<AuditLog, CoreError> {
         let directory = env.state_dir.join("jawa");
         fs::create_dir_all(&directory)?;
@@ -36,7 +32,6 @@ impl AuditLog {
         Ok(AuditLog { path })
     }
 
-    /// Acrescenta uma linha com uma unica escrita, para nao intercalar linhas.
     pub fn record(&self, entry: &AuditEntry) -> Result<(), CoreError> {
         let mut line = serde_json::to_vec(entry).map_err(io::Error::from)?;
         line.push(b'\n');
@@ -44,8 +39,6 @@ impl AuditLog {
         Ok(())
     }
 
-    /// As ultimas `limit` entradas, da mais antiga para a mais recente.
-    /// Linhas ilegiveis sao puladas.
     pub fn recent(&self, limit: usize) -> Vec<AuditEntry> {
         let text = match fs::read_to_string(&self.path) {
             Ok(text) => text,

@@ -1,6 +1,3 @@
-//! Interface no terminal: `jawa` sem subcomando. O loop le teclas e mensagens
-//! dos workers, chama `update` e aplica os efeitos; nunca espera o disco.
-
 pub mod model;
 pub mod view;
 pub mod worker;
@@ -47,8 +44,6 @@ pub enum TuiError {
     NoTerminal,
 }
 
-/// Abre a interface. Segura o lock de instancia (S13) do comeco ao fim e
-/// devolve o terminal ao normal em qualquer saida, inclusive em panico.
 pub fn run(session: Session) -> Result<(), TuiError> {
     let _lock = InstanceLock::acquire(&session.env)?;
     if !(io::stdin().is_terminal() && io::stdout().is_terminal()) {
@@ -66,7 +61,6 @@ pub fn run(session: Session) -> Result<(), TuiError> {
     event_loop(&mut terminal, &mut runtime, &rx)
 }
 
-/// Modo raw e tela alternativa; o `Drop` desfaz os dois.
 struct ScreenGuard;
 
 impl ScreenGuard {
@@ -93,9 +87,6 @@ fn restore_terminal() {
     }
 }
 
-/// Um panico na thread da interface devolve o terminal antes da mensagem. O
-/// de um worker vai so para o log: escrever no stderr sujaria a tela
-/// alternativa, e a interface segue mostrando o erro.
 fn install_panic_hook() {
     let previous = panic::take_hook();
     panic::set_hook(Box::new(move |info| {
@@ -134,14 +125,12 @@ fn event_loop(
                 model.disk = disk_usage(&runtime.session);
             }
             if is_error {
-                // Redesenho completo: algo pode ter escrito por cima da tela.
                 terminal.clear()?;
             }
         }
     }
 }
 
-/// Espera uma tecla por ate `POLL_INTERVAL` e junta o que os workers mandaram.
 fn next_messages(rx: &Receiver<Msg>) -> io::Result<Vec<Msg>> {
     let mut messages = Vec::new();
     if event::poll(POLL_INTERVAL)?
@@ -166,7 +155,6 @@ struct Runtime {
 }
 
 impl Runtime {
-    /// Aplica um efeito; devolve `false` quando a interface deve fechar.
     fn apply(&mut self, effect: Effect) -> bool {
         match effect {
             Effect::StartScan => self.start_scan(),
@@ -187,7 +175,6 @@ impl Runtime {
         }
     }
 
-    /// A limpeza usa o ledger gravado, com a idade conferida agora (S2).
     fn start_clean(&mut self, request: CleanRequest) {
         let session = Arc::new(self.session.at_now());
         let ledger = match Ledger::load_fresh(&session.env) {

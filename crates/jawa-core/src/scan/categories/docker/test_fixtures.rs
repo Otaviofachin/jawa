@@ -26,7 +26,6 @@ pub(crate) fn ok(stdout: &str) -> CommandOutput {
     }
 }
 
-/// Docker ligado, respondendo com as saidas reais (anonimizadas).
 pub(crate) fn running_docker() -> FakeRunner {
     FakeRunner::new()
         .on(&["system", "df", "--format"], ok(SYSTEM_DF))

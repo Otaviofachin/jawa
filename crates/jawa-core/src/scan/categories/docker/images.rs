@@ -1,5 +1,3 @@
-//! `docker-imagens`: cache de build e imagens sem container.
-
 use std::path::PathBuf;
 
 use super::{Category, Descriptor, MIN_ITEM_BYTES, ScanContext, ScanOutput, ScanProblem};
@@ -20,7 +18,6 @@ static IMAGES_DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::IMAGES_EXPLANATION,
 };
 
-/// Cache de build e imagens sem container, com o tamanho do `docker system df`.
 pub struct DockerImages;
 
 impl Category for DockerImages {
@@ -52,7 +49,6 @@ impl Category for DockerImages {
     }
 }
 
-/// `docker <object> prune -a -f`: seguro e regeneravel.
 pub(super) fn prune_item(bytes: u64, object: &str, label: &str, note: &str) -> CommandItem {
     CommandItem {
         category: CategoryId::DockerImages,

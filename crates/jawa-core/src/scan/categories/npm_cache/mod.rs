@@ -16,7 +16,6 @@ static DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::EXPLANATION,
 };
 
-/// `~/.npm/_cacache` e `~/.npm/_npx`.
 pub struct NpmCache;
 
 impl Category for NpmCache {

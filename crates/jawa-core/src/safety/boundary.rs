@@ -6,7 +6,6 @@ use thiserror::Error;
 
 use crate::system::env::Environment;
 
-/// Subpastas de `config_dir` que podem ser limpas (S19).
 pub const CONFIG_CACHE_ALLOWLIST: &[&str] = &[
     "Code/Cache",
     "Code/CachedData",
@@ -37,8 +36,6 @@ pub enum BoundaryViolation {
     IsMountPoint,
 }
 
-/// Valida o alvo e devolve `pai.canonicalize().join(nome)`; nunca segue o
-/// proprio alvo, de modo que um symlink e tratado como o link em si.
 pub fn check_target(
     path: &Path,
     roots: &[PathBuf],
@@ -89,8 +86,6 @@ fn denied_reason(resolved: &Path, env: &Environment) -> Option<PathBuf> {
         .or_else(|| denied_config(resolved, &home, env))
 }
 
-/// Caminhos da S4 cuja subarvore inteira, e tambem qualquer ancestral, e proibida.
-/// Vale o caminho literal sob a pasta pessoal e o resolvido pelo XDG.
 fn protected_subtrees(home: &Path, env: &Environment) -> Vec<PathBuf> {
     let mut rules: Vec<PathBuf> = ["/etc", "/usr", "/var", "/opt", "/boot"]
         .iter()
@@ -150,7 +145,6 @@ fn inside_any_root(resolved: &Path, roots: &[PathBuf]) -> Result<(), BoundaryVio
     Err(BoundaryViolation::OutsideRoots)
 }
 
-/// Falha fechado: se o lstat falhar, o alvo e tratado como ponto de montagem.
 fn is_mount_point(resolved: &Path, parent: &Path) -> bool {
     match (fs::symlink_metadata(resolved), fs::symlink_metadata(parent)) {
         (Ok(target), Ok(parent)) => target.dev() != parent.dev(),

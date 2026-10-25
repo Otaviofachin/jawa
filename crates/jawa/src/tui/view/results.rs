@@ -1,5 +1,3 @@
-//! Resultado: estimado x medido, dica de snapshot/Lixeira e itens pulados.
-
 use jawa_core::clean::{CleanReport, ItemOutcome};
 use ratatui::Frame;
 use ratatui::layout::Rect;
@@ -16,7 +14,6 @@ pub(super) fn draw_results(frame: &mut Frame, area: Rect, model: &Model) {
     draw_text(frame, area, model, lines);
 }
 
-/// Estimado x medido, dicas de snapshot e Lixeira, pulados e avisos.
 pub(super) fn result_lines(report: &CleanReport) -> Vec<Line<'static>> {
     let mut lines: Vec<Line<'static>> = space_lines(report).into_iter().map(Line::from).collect();
     if report.space_may_be_stuck() {

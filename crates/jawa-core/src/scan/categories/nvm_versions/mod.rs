@@ -41,7 +41,6 @@ static DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::EXPLANATION,
 };
 
-/// `$NVM_DIR/versions/node/v*` que ninguem pede (S18).
 pub struct NvmVersions;
 
 impl Category for NvmVersions {
@@ -150,8 +149,6 @@ fn version_item(version: &NodeVersion) -> PathItem<'_> {
     }
 }
 
-/// Versoes instaladas, da mais antiga para a mais nova. Sem a pasta, o nvm
-/// nao esta instalado.
 fn installed_versions(base: &Path) -> Result<Vec<NodeVersion>, ScanProblem> {
     let entries = fs::read_dir(base).map_err(|_| ScanProblem::ToolMissing("nvm"))?;
     let mut installed: Vec<NodeVersion> = entries
@@ -169,14 +166,11 @@ fn installed_versions(base: &Path) -> Result<Vec<NodeVersion>, ScanProblem> {
     Ok(installed)
 }
 
-/// `v20.11.1` (com ou sem o `v`) em tres numeros.
 fn parse_version_name(name: &str) -> Option<[u32; 3]> {
     let numbers = parse_numbers(name)?;
     <[u32; 3]>::try_from(numbers).ok()
 }
 
-/// Um a tres partes separadas por ponto, com `v` opcional na frente. Partes
-/// curinga (`x`, `X`, `*`) no fim sao descartadas: `18.x.x` vira `[18]`.
 fn parse_numbers(text: &str) -> Option<Vec<u32>> {
     let parts: Vec<&str> = text.strip_prefix('v').unwrap_or(text).split('.').collect();
     if !(1..=3).contains(&parts.len()) {
@@ -221,7 +215,6 @@ fn classify(request: &str) -> Request {
 }
 
 #[cfg(test)]
-/// Resolve um pedido (`node`, `lts/*`, `lts/iron`, `18`, `18.19.0`, alias) como o nvm.
 fn resolve<'a>(
     request: &str,
     installed: &'a [NodeVersion],
@@ -235,9 +228,7 @@ fn resolve<'a>(
 
 enum Resolution<'a> {
     Found(&'a NodeVersion),
-    /// Pedido entendido, mas nenhuma versao instalada casa.
     NotInstalled,
-    /// Pedido que o Jawa nao sabe interpretar.
     Unknown,
 }
 
@@ -284,8 +275,6 @@ fn resolve_alias<'a>(
     }
 }
 
-/// `lts/*` e `lts/<nome>` como o nvm grava: `alias/lts/*` aponta para
-/// `lts/<nome>`, que guarda a versao. Sem o arquivo, vale a heuristica.
 fn read_lts_alias(aliases: &Path, request: &str) -> Option<String> {
     let name = request.strip_prefix("lts/")?;
     let is_plain = name == "*"
@@ -325,9 +314,6 @@ struct Protection {
     active_found: bool,
 }
 
-/// Versoes que nao podem ser oferecidas: o alias `default`, qualquer `.nvmrc`
-/// dos projetos e a ativa no `PATH`. Pedidos que o Jawa nao entende ficam em
-/// `unknown` (falha fechado).
 fn protected(
     ctx: &ScanContext,
     installed: &[NodeVersion],
@@ -362,7 +348,6 @@ fn protected(
     protection
 }
 
-/// Alvo canonico de `which node`, quando esta dentro do nvm.
 fn active_version(nvm_dir: &Path, path_var: Option<OsString>, cwd: &Path) -> Option<[u32; 3]> {
     let node = which::which_in("node", path_var, cwd).ok()?;
     let target = node.canonicalize().ok()?;
@@ -371,7 +356,6 @@ fn active_version(nvm_dir: &Path, path_var: Option<OsString>, cwd: &Path) -> Opt
     parse_version_name(first.as_os_str().to_str()?)
 }
 
-/// Arquivo e primeira linha util de cada `.nvmrc` (ate 2 niveis em cada repositorio).
 fn nvmrc_requests(ctx: &ScanContext) -> Vec<(PathBuf, String)> {
     all_repositories(ctx)
         .iter()
@@ -407,7 +391,6 @@ fn first_useful_line(path: &Path) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Nomes em `lib/node_modules` (incluindo `@escopo/nome`), sem `npm` e `corepack`.
 fn global_packages(version_dir: &Path) -> Vec<String> {
     let modules = version_dir.join("lib/node_modules");
     let mut names: Vec<String> = subdirs(&modules)

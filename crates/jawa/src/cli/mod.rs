@@ -1,11 +1,11 @@
-//! Linha de comando em PT-BR: cada subcomando fica no seu arquivo.
-
 mod clean;
 mod explain;
 mod history;
+mod json;
 mod measure;
 
 use std::io;
+use std::path::Path;
 use std::process::ExitCode;
 
 use clap::{ArgAction, Parser, Subcommand};
@@ -23,15 +23,14 @@ use jawa_core::api::Session;
 pub const EXIT_ERROR: u8 = 1;
 pub const EXIT_PARTIAL: u8 = 2;
 
-/// Modelo da ajuda em PT-BR (o padrão do clap traz `Usage:` em inglês).
 const HELP_TEMPLATE: &str = "{about-with-newline}\nUso: {usage}\n\n{all-args}{after-help}";
 pub(crate) const OPTIONS_HEADING: &str = "Opções";
 pub(crate) const ARGUMENTS_HEADING: &str = "Argumentos";
 
-/// Limpador de disco para desenvolvedores no Linux.
 #[derive(Parser)]
 #[command(
     name = "jawa",
+    about = "Limpador de disco para desenvolvedores no Linux",
     version,
     help_template = HELP_TEMPLATE,
     override_usage = "jawa   (abre a interface no terminal)",
@@ -45,19 +44,17 @@ pub(crate) const ARGUMENTS_HEADING: &str = "Argumentos";
 pub struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
-    /// Mostra esta ajuda.
-    #[arg(short = 'h', long = "help", action = ArgAction::Help, global = true)]
+    #[arg(short = 'h', long = "help", action = ArgAction::Help, global = true, help = "Mostra esta ajuda")]
     help: Option<bool>,
-    /// Mostra a versão.
-    #[arg(short = 'V', long = "version", action = ArgAction::Version)]
+    #[arg(short = 'V', long = "version", action = ArgAction::Version, help = "Mostra a versão")]
     version: Option<bool>,
 }
 
 #[derive(Subcommand)]
 enum Command {
-    /// Mede o que dá para limpar e grava a medição (nunca apaga nada).
     #[command(
         name = "medir",
+        about = "Mede o que dá para limpar e grava a medição (nunca apaga nada)",
         hide = true,
         override_usage = "jawa medir [--categoria <ID>] [--json]",
         help_template = HELP_TEMPLATE,
@@ -65,16 +62,18 @@ enum Command {
         disable_help_flag = true
     )]
     Measure {
-        /// Mede só esta categoria (veja os ids em `jawa medir`).
-        #[arg(long = "categoria", value_name = "ID")]
+        #[arg(
+            long = "categoria",
+            value_name = "ID",
+            help = "Mede só esta categoria (veja os ids em `jawa medir`)"
+        )]
         category: Option<CategoryId>,
-        /// Mostra o resultado em JSON.
-        #[arg(long)]
+        #[arg(long, help = "Mostra o resultado em JSON")]
         json: bool,
     },
-    /// Explica uma categoria: o que é, por que cresce e o que acontece ao limpar.
     #[command(
         name = "explicar",
+        about = "Explica uma categoria: o que é, por que cresce e o que acontece ao limpar",
         hide = true,
         override_usage = "jawa explicar <CATEGORIA>",
         help_template = HELP_TEMPLATE,
@@ -82,13 +81,12 @@ enum Command {
         disable_help_flag = true
     )]
     Explain {
-        /// Id da categoria, por exemplo `npm-cache`.
-        #[arg(value_name = "CATEGORIA", help_heading = ARGUMENTS_HEADING)]
+        #[arg(value_name = "CATEGORIA", help_heading = ARGUMENTS_HEADING, help = "Id da categoria, por exemplo `npm-cache`")]
         category: CategoryId,
     },
-    /// Limpa itens da última medição.
     #[command(
         name = "limpar",
+        about = "Limpa itens da última medição",
         hide = true,
         override_usage = "jawa limpar [IDS]... [--seguros] [--simular] [--sim] \
                           [--confirmar-irreversivel]",
@@ -97,9 +95,9 @@ enum Command {
         disable_help_flag = true
     )]
     Clean(clean::CleanArgs),
-    /// Mostra as últimas ações registradas.
     #[command(
         name = "historico",
+        about = "Mostra as últimas ações registradas",
         hide = true,
         override_usage = "jawa historico [--ultimos <N>]",
         help_template = HELP_TEMPLATE,
@@ -107,8 +105,12 @@ enum Command {
         disable_help_flag = true
     )]
     History {
-        /// Quantas entradas mostrar.
-        #[arg(long = "ultimos", value_name = "N", default_value_t = 20)]
+        #[arg(
+            long = "ultimos",
+            value_name = "N",
+            default_value_t = 20,
+            help = "Quantas entradas mostrar"
+        )]
         last: usize,
     },
 }
@@ -131,6 +133,28 @@ pub enum CliError {
 
 pub type CliResult = Result<ExitCode, CliError>;
 
+const TEXTUAL_INTERFACE: &str = "jawa-tui";
+
+fn open_interface(session: &Session) -> CliResult {
+    match which::which(TEXTUAL_INTERFACE) {
+        Ok(program) => launch_textual(&program),
+        Err(_) => tui::run(session.clone())
+            .map(|()| ExitCode::SUCCESS)
+            .map_err(CliError::from),
+    }
+}
+
+fn launch_textual(program: &Path) -> CliResult {
+    let status = std::process::Command::new(program)
+        .env("JAWA_BIN", std::env::current_exe()?)
+        .status()?;
+    let code = status
+        .code()
+        .and_then(|code| u8::try_from(code).ok())
+        .unwrap_or(EXIT_ERROR);
+    Ok(ExitCode::from(code))
+}
+
 pub fn run(cli: Cli) -> ExitCode {
     let session = match Session::open().map_err(CliError::from) {
         Ok(session) => session,
@@ -138,9 +162,7 @@ pub fn run(cli: Cli) -> ExitCode {
     };
     let _log_guard = init_logging(&session.env);
     let outcome = match cli.command {
-        None => tui::run(session.clone())
-            .map(|()| ExitCode::SUCCESS)
-            .map_err(CliError::from),
+        None => open_interface(&session),
         Some(Command::Measure { category, json }) => measure::run(&session, category, json),
         Some(Command::Explain { category }) => explain::run(category),
         Some(Command::Clean(args)) => clean::run(&session, &args),
@@ -154,7 +176,6 @@ fn report_failure(error: &CliError) -> ExitCode {
     ExitCode::from(EXIT_ERROR)
 }
 
-/// O diagnostico vai para `jawa.log`; sem o arquivo, o jawa segue sem log.
 fn init_logging(env: &Environment) -> Option<WorkerGuard> {
     let directory = env.state_dir.join("jawa");
     std::fs::create_dir_all(&directory).ok()?;

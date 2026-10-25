@@ -1,6 +1,3 @@
-//! `caches-apps`: caches de navegadores e apps, bloqueados com o app aberto (S6)
-//! e, em `~/.config`, so as subpastas da lista (S19).
-
 mod texts;
 
 use std::path::{Path, PathBuf};
@@ -11,7 +8,6 @@ use crate::model::finding::{CategoryId, Finding};
 use crate::scan::ScanContext;
 use crate::scan::paths::collect_findings_watched;
 
-/// Um cache e os processos do app que o usa.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AppCache {
     pub cache: KnownCache,
@@ -19,7 +15,6 @@ pub struct AppCache {
 }
 
 const CHROME: &[&str] = &["chrome"];
-/// `chromium-browser` aparece cortado em 15 caracteres no `comm`.
 const CHROMIUM: &[&str] = &["chromium", "chromium-browse"];
 const FIREFOX: &[&str] = &["firefox", "firefox-esr"];
 const SPOTIFY: &[&str] = &["spotify"];
@@ -170,7 +165,6 @@ pub const APP_CACHES: [AppCache; 17] = [
     ),
 ];
 
-/// Uniao dos processos de todas as entradas; usada pelo executor.
 const WATCHED: [&str; 9] = [
     "chrome",
     "chromium",
@@ -209,8 +203,6 @@ impl Category for AppCaches {
         &WATCHED
     }
 
-    /// Na hora de limpar, o item so fica bloqueado pelo proprio app. Item
-    /// que nao casa com nenhuma entrada fica com todos (falha fechado).
     fn watched_processes_for(&self, finding: &Finding) -> Vec<&'static str> {
         let Some(path) = finding.action.path() else {
             return WATCHED.to_vec();
@@ -221,7 +213,6 @@ impl Category for AppCaches {
             .map_or_else(|| WATCHED.to_vec(), |app| app.watched.to_vec())
     }
 
-    /// Cada item so fica bloqueado pelo proprio app (S6).
     fn scan(&self, ctx: &ScanContext) -> Result<ScanOutput, ScanProblem> {
         let entries: Vec<(&[&str], CacheEntry)> = APP_CACHES
             .iter()

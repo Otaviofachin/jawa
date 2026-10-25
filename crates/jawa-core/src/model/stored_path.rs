@@ -1,7 +1,3 @@
-//! Serde para `PathBuf` que preserva caminhos nao UTF-8. Caminho UTF-8 vira
-//! string; o resto vira `"hex:<bytes em hex>"`. Um caminho UTF-8 que comeca
-//! com `hex:` tambem e gravado em hex, para a leitura nunca ser ambigua.
-
 use std::ffi::OsString;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::path::{Path, PathBuf};

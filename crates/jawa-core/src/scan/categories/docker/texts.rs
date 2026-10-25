@@ -1,5 +1,3 @@
-//! Textos da categoria, em PT-BR, exibidos por `jawa explicar` e na TUI.
-
 use crate::scan::categories::Explanation;
 
 pub(super) const IMAGES_TITLE: &str = "Docker: imagens e cache de build";

@@ -17,7 +17,6 @@ pub const MAX_STREAM_BYTES: usize = 8 * 1024 * 1024;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommandOutput {
     pub success: bool,
-    /// Codigo de saida; `None` quando o processo foi encerrado por sinal.
     pub code: Option<i32>,
     pub stdout: String,
     pub stderr: String,
@@ -33,8 +32,6 @@ pub enum RunError {
     Io(String),
 }
 
-/// Toda execucao de comando externo passa por aqui, para os testes trocarem
-/// o sistema por respostas prontas.
 pub trait CommandRunner: Sync {
     fn run(&self, spec: &CommandSpec) -> Result<CommandOutput, RunError>;
 }
@@ -43,8 +40,6 @@ pub trait CommandRunner: Sync {
 pub struct SystemRunner;
 
 impl CommandRunner for SystemRunner {
-    /// Le stdout e stderr em threads separadas (sem travar com saida grande)
-    /// e mata o processo quando passa de `spec.timeout`.
     fn run(&self, spec: &CommandSpec) -> Result<CommandOutput, RunError> {
         let mut child = spawn(spec)?;
         feed_stdin(&mut child, spec.stdin.clone());
@@ -81,8 +76,6 @@ fn spawn(spec: &CommandSpec) -> Result<Child, RunError> {
         })
 }
 
-/// Escreve a entrada numa thread solta: se o programa nao ler, o pipe cheio
-/// nao trava a espera. Fechar o pipe ao fim manda EOF.
 fn feed_stdin(child: &mut Child, input: Option<Vec<u8>>) {
     let (Some(bytes), Some(mut pipe)) = (input, child.stdin.take()) else {
         return;
@@ -94,7 +87,6 @@ fn feed_stdin(child: &mut Child, input: Option<Vec<u8>>) {
     });
 }
 
-/// Saida lida aos pedacos por uma thread, visivel mesmo se ela nao terminar.
 struct Drained {
     bytes: Arc<Mutex<Vec<u8>>>,
     handle: JoinHandle<()>,
@@ -121,8 +113,6 @@ fn drain<R: Read + Send + 'static>(pipe: Option<R>) -> Option<Drained> {
     Some(Drained { bytes, handle })
 }
 
-/// Guarda ate `MAX_STREAM_BYTES`; o excedente e lido e descartado, para o
-/// filho nunca travar com o pipe cheio.
 fn append(sink: &Mutex<Vec<u8>>, chunk: &[u8]) {
     if let Ok(mut bytes) = sink.lock() {
         let room = MAX_STREAM_BYTES.saturating_sub(bytes.len());
@@ -130,8 +120,6 @@ fn append(sink: &Mutex<Vec<u8>>, chunk: &[u8]) {
     }
 }
 
-/// Espera a leitura acabar ate `deadline`: um neto que herdou o pipe e
-/// continua vivo nao segura o retorno alem do prazo.
 fn collect(drained: Option<Drained>, deadline: Instant) -> String {
     let Some(drained) = drained else {
         return String::new();
@@ -147,8 +135,6 @@ fn collect(drained: Option<Drained>, deadline: Instant) -> String {
     String::from_utf8_lossy(&bytes).into_owned()
 }
 
-/// No estouro, mata e espera o filho; as threads de leitura ficam soltas e
-/// terminam quando o ultimo dono do pipe fechar.
 fn wait_or_kill(child: &mut Child, timeout: Duration) -> Result<ExitStatus, RunError> {
     let deadline = Instant::now() + timeout;
     loop {
@@ -165,8 +151,6 @@ fn wait_or_kill(child: &mut Child, timeout: Duration) -> Result<ExitStatus, RunE
     }
 }
 
-/// Runner de teste: responde pelo prefixo mais longo dos `args` e guarda as
-/// chamadas recebidas.
 #[cfg(any(test, feature = "test-support"))]
 #[derive(Debug, Default)]
 pub struct FakeRunner {
@@ -187,7 +171,6 @@ impl FakeRunner {
         self
     }
 
-    /// Simula um comando travado: dorme `delay` (no maximo o timeout pedido).
     pub fn delay(mut self, delay: Duration) -> FakeRunner {
         self.delay = Some(delay);
         self

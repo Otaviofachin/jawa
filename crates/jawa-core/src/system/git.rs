@@ -1,5 +1,3 @@
-//! Leitura do git: caminhos ignorados (S5) e ultima atividade de um repositorio (S16).
-
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs;
@@ -26,15 +24,11 @@ impl<'a> Git<'a> {
         }
     }
 
-    /// Variaveis extras para cada chamada (usadas para isolar os testes da
-    /// configuracao global do git).
     pub fn with_env(mut self, env: Vec<(String, String)>) -> Git<'a> {
         self.env = env;
         self
     }
 
-    /// Quais `candidates` o git ignora, numa unica chamada (`check-ignore
-    /// --stdin -z`). Nenhum ignorado (codigo 1) e um conjunto vazio, nao erro.
     pub fn ignored_among(
         &self,
         repo: &Path,
@@ -61,8 +55,6 @@ impl<'a> Git<'a> {
             .collect())
     }
 
-    /// O mais recente entre o ultimo commit do `HEAD`, o `logs/HEAD` (checkout,
-    /// pull) e o `index` (add, status). `None` se nada pode ser lido.
     pub fn last_activity(&self, repo: &Path) -> Option<SystemTime> {
         let commit = self.last_commit_time(repo);
         let git_dir = self.git_dir(repo);
@@ -137,7 +129,6 @@ pub(crate) mod test_repo {
         PathBuf::from("git")
     }
 
-    /// Isola o git dos testes da configuracao global e do sistema do dev.
     pub(crate) fn isolated_env() -> Vec<(String, String)> {
         vec![
             ("GIT_CONFIG_GLOBAL".to_string(), "/dev/null".to_string()),
@@ -174,8 +165,6 @@ pub(crate) mod test_repo {
         String::from_utf8_lossy(&output.stdout).into_owned()
     }
 
-    /// Repositorio novo com um commit de `days_ago` dias atras, e o `index` e o
-    /// `logs/HEAD` envelhecidos para a mesma data.
     pub(crate) fn init_repo(repo: &Path, days_ago: u64) {
         fs::create_dir_all(repo).unwrap();
         git(repo, &["init", "-q", "-b", "main"], 0);

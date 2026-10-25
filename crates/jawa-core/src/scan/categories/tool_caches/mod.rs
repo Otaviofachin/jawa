@@ -1,6 +1,3 @@
-//! `caches-ferramentas`: caches de ferramentas de desenvolvimento e versoes
-//! antigas do Claude Code.
-
 mod texts;
 
 use std::ffi::OsString;
@@ -13,7 +10,6 @@ use crate::scan::paths::{PathItem, collect_findings};
 use crate::scan::{ScanContext, join_footnotes};
 use crate::system::env::Environment;
 
-/// Pasta-base de um cache conhecido.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Base {
     Cache,
@@ -21,7 +17,6 @@ pub enum Base {
     Config,
 }
 
-/// Uma pasta de cache com nome fixo, relativa a `base`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct KnownCache {
     pub base: Base,
@@ -186,8 +181,6 @@ fn claude_versions_dir(env: &Environment) -> PathBuf {
     env.data_dir.join(CLAUDE_VERSIONS)
 }
 
-/// As versoes em `claude/versions` menos a que o lancador usa. Sem conseguir
-/// ler o link, nenhuma e oferecida: apagar a versao em uso quebra o comando.
 fn old_claude_versions(env: &Environment) -> (Vec<CacheEntry>, Option<String>) {
     let Ok(entries) = fs::read_dir(claude_versions_dir(env)) else {
         return (Vec::new(), None);
@@ -211,10 +204,6 @@ fn old_claude_versions(env: &Environment) -> (Vec<CacheEntry>, Option<String>) {
     (old, None)
 }
 
-/// A versao em uso: o primeiro componente do alvo final do lancador dentro
-/// de `versions/` (a versao pode ser um arquivo ou uma pasta com o binario).
-/// Exige que o lancador seja um link e segue a cadeia inteira. Alvo fora de
-/// `versions/` ou ilegivel: nenhuma versao e conhecida.
 fn claude_in_use(env: &Environment) -> Option<OsString> {
     let launcher = env.home.join(CLAUDE_LAUNCHER);
     fs::read_link(&launcher).ok()?;
@@ -236,7 +225,6 @@ fn claude_version_entry(env: &Environment, name: &OsString, in_use: &str) -> Cac
     }
 }
 
-/// Caminho, rotulo e nota de um item de cache ja resolvido.
 pub(super) struct CacheEntry {
     pub path: PathBuf,
     pub label: String,
@@ -265,7 +253,6 @@ impl CacheEntry {
     }
 }
 
-/// Os pais das entradas, sem repetir: as raizes da fronteira (S4).
 pub(super) fn parent_roots<'a>(paths: impl IntoIterator<Item = &'a Path>) -> Vec<PathBuf> {
     let mut roots: Vec<PathBuf> = Vec::new();
     for parent in paths.into_iter().filter_map(Path::parent) {

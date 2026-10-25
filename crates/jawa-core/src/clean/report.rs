@@ -1,5 +1,3 @@
-//! Resultado da limpeza: motivo de cada pulo, desfecho por item e relatorio final.
-
 use std::fmt;
 
 use crate::model::finding::{Action, Finding};
@@ -75,35 +73,26 @@ pub struct CleanReport {
 }
 
 impl CleanReport {
-    /// Espaco realmente liberado: diferenca do espaco livre (nunca negativa).
     pub fn measured_bytes(&self) -> u64 {
         self.free_after.saturating_sub(self.free_before)
     }
 
-    /// Itens feitos que foram para a Lixeira: so voltam ao disco quando ela e
-    /// esvaziada.
     pub fn trashed_bytes(&self) -> u64 {
         self.done_bytes(|finding| matches!(finding.action, Action::Trash(_)))
     }
 
-    /// Itens feitos dentro da VM do Docker Desktop: so voltam ao disco quando
-    /// o disco virtual e recuperado.
     pub fn docker_desktop_bytes(&self) -> u64 {
         self.done_bytes(
             |finding| matches!(&finding.action, Action::Run(spec) if spec.runs_in_docker_desktop()),
         )
     }
 
-    /// O que deveria aparecer como espaco livre agora: o estimado sem a
-    /// Lixeira e sem a VM do Docker Desktop.
     pub fn on_disk_estimate(&self) -> u64 {
         self.estimated_bytes
             .saturating_sub(self.trashed_bytes())
             .saturating_sub(self.docker_desktop_bytes())
     }
 
-    /// Medido abaixo da metade do que deveria ter voltado ao disco: o espaco
-    /// pode estar preso em snapshots.
     pub fn space_may_be_stuck(&self) -> bool {
         let expected = self.on_disk_estimate();
         expected > 0 && self.measured_bytes() < expected / 2

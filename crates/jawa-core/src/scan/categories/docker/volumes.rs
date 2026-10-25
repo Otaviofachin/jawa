@@ -1,5 +1,3 @@
-//! `docker-volumes`: um item por volume solto (S10) e os containers parados medidos.
-
 use std::path::PathBuf;
 
 use super::{Category, Descriptor, MIN_ITEM_BYTES, ScanContext, ScanOutput, ScanProblem};
@@ -22,7 +20,6 @@ static VOLUMES_DESCRIPTOR: Descriptor = Descriptor {
     explanation: texts::VOLUMES_EXPLANATION,
 };
 
-/// Um item por volume solto (S10) e um item para os containers parados.
 pub struct DockerVolumes;
 
 impl Category for DockerVolumes {
@@ -59,7 +56,6 @@ impl Category for DockerVolumes {
     }
 }
 
-/// Volumes abaixo de 1 MiB (ou sem tamanho no `df -v`) nao sao oferecidos.
 pub(super) fn small_volumes_note(count: usize) -> Option<String> {
     (count > 0).then(|| {
         format!("{count} volume(s) pequeno(s) ou de tamanho desconhecido ficaram de fora.")
@@ -82,8 +78,6 @@ pub(super) fn volume_item(volume: VolumeInfo) -> CommandItem {
     }
 }
 
-/// Remove so os containers medidos, pelo id (nunca `prune`, que levaria
-/// tambem os que pararem depois da medicao).
 pub(super) fn containers_item(bytes: u64, stopped: &[StoppedContainer]) -> CommandItem {
     let names: Vec<&str> = stopped
         .iter()
